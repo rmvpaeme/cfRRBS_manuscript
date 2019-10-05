@@ -1,0 +1,6 @@
+rrbs: --rrbs
+lambdagenome: Lambda_genome/
+humangenome: Bisulfite_genome/
+humangenomefa: GRCh37.fa
+target: RRBS_regions20-200.interval_list
+genomebuild: GRCh37

@@ -1,0 +1,2 @@
+Sample ID	Probe Name	AVG_Beta	Gene Symbols	Chromosome	Position
+TARGET-51-PAEALX-01A-01D	cg03123289	0.1	A1BG	19	58858635

@@ -1,0 +1,12 @@
+## sWGS
+humangenome: "homo_sapiens_Ensembl_84_38.fa"
+library: 'NIPT_sWGS'
+PoNichorCNA: "GRCh38.pon_median.rds"
+ichorCNAfolder: "/ichorCNA"
+runichorCNA: "/ichorCNA/runIchorCNA.R"
+hmmcopy: "/ichorCNA/HMMcopy/bin/readCounter"
+wisex: "/wisecondorX_master/WisecondorX/wisecondorX/main.py"
+wisexref: "/wcX_references/v1.0.2/LQB.GRCh38.200kb.npz"
+blacklist: "/wisecondorX_master/WisecondorX/example.blacklist/centromere.hg38.txt"
+wisexkb: 200
+ichorkb: 500
