@@ -18,8 +18,6 @@ The datasets can be obtained from:
 - Wilms tumor: TARGET-L3: ftp://anonymous:guest@caftpd.nci.nih.gov/pub/OCG-DCC/TARGET/WT/methylation_array/
 - Clear cell sarcoma of the kidney: TARGET-L3: ftp://anonymous:guest@caftpd.nci.nih.gov/pub/OCG-DCC/TARGET/CCSK/methylation_array/
 
-As some files are very large, only the scripts are hosted in this repository. You can download dataset with example and tests files [here].
-
 ## Preprocessing raw sequencing reads
 After the sequencing run has finished, all fastq.gz files are put into one folder and the snakemake pipeline in the preprocessing folder (`code/preprocessing/Bismark_pipeline_SE.snakefile`) was initiated.
 - For RRBS data: reads were not deduplicated according to the Bismark user guide.
@@ -81,7 +79,14 @@ WisecondorX (https://github.com/CenterForMedicalGeneticsGhent/WisecondorX) was u
 Steps taken to obtain cfRRBS CNA profiles:
 1. Convert .bam files (after mapping with Bismark and sorting with samtools) to .npz files. with 200kb bins: `WisecondorX convert --binsize 200000 ${BAM} ${OUTPUT_DIR}/${SAMPLE}.npz`
 2. A reference set with healthy controls samples was made. It's essential that this reference set is done with the same DNA isolation, library prep and sequencing machine to account for systematic errors: `WisecondorX newref reference_input_dir/*.npz reference_output.npz --nipt --binsize 400000`
-3. Make CNA calls: `for npz in *_bt2.npz; do SAMPLE=${npz%%.*}; /user/gent/422/vsc42220/WisecondorX/wisecondorX/main.py predict $npz reference.GRCh38.400kb.npz ./output400kb/$SAMPLE --beta 0.15 --minrefbins 50 --plot --bed ; done`
+3. Make CNA calls: 
+```
+for npz in *_bt2.npz; 
+  do 
+    SAMPLE=${npz%%.*}
+    WisecondorX predict $npz reference.GRCh38.400kb.npz ./output400kb/$SAMPLE --beta 0.15 --minrefbins 50 --plot --bed
+  done
+```
 ### sWGS
 The steps required to obtain sWGS CNA profiles and IchorCNA tumor fraction estimations are described in more detail in `code/preprocessing/sWGS_pipeline_SE.snakefile`. 
 
