@@ -51,19 +51,20 @@ color.A = colorRampPalette(brewer.pal(4,"BrBG"))(4)[4]
 color.B = colorRampPalette(brewer.pal(4,"BrBG"))(4)[2]
 color.C = colorRampPalette(brewer.pal(4,"BrBG"))(4)[1]
 
-url <- "https://www.dropbox.com/s/fnb0zzlm11sglf1/Suppl.data%20-%20analysis.xlsx?dl=1"
+url <- "https://www.biorxiv.org/content/biorxiv/early/2019/10/07/795047/DC3/embed/media-3.xlsx?download=true"
 GET(url, write_disk(tf <- tempfile(fileext = ".xlsx")))
 analysis <- read_excel(tf, sheet = "samples_final", skip = 1, col_names = TRUE )
 scRRBS_annotation <- read_excel(tf, sheet = "scRRBS_QC", skip = 0, col_names = TRUE )
 
-url <- "https://www.dropbox.com/s/isl22k7nxhcwy4u/Suppl.data%20-%20clinical%20parameters.xlsx?dl=1"
+url <- "https://www.biorxiv.org/content/biorxiv/early/2019/10/07/795047/DC2/embed/media-2.xlsx?download=true"
 GET(url, write_disk(tf <- tempfile(fileext = ".xlsx")))
 clinical_annotation <- read_excel(tf, sheet = "samples_final", skip = 1, col_names = TRUE )
 clinical_annotation$Months_at_diagnosis <- as.double(clinical_annotation$Months_at_diagnosis)
 
-url <- "https://www.dropbox.com/s/cdpy1mqd45edrm9/cfDNA_HMW_ratio.xlsx?dl=1"
+
+url <- "https://www.biorxiv.org/content/biorxiv/early/2019/10/07/795047/DC2/embed/media-3.xlsx?download=true"
 GET(url, write_disk(tf <- tempfile(fileext = ".xlsx")))
-HMW_ratio <-  read_excel(tf, sheet = "Sheet1", skip = 0, col_names = TRUE )
+HMW_ratio <-  read_excel(tf, sheet = "cfDNA-HMW ratio", skip = 0, col_names = TRUE )
 HMW_ratio <- HMW_ratio[!is.na(HMW_ratio$SampleID), ]
 
 fulldeconv <- read_csv("./test_methatlas_deconv_output.csv") %>% melt()
