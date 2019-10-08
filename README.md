@@ -1,7 +1,7 @@
 # Scripts used in Van Paemel et al. (2019)
 
 ## Introduction
-These are the scripts that were used in the manuscript "Low-cost, non-invasive classification of pediatric solid tumors using reduced representation bisulfite sequencing of cell-free DNA: a proof-of-principle study". See also materials and method section of the manuscript for more information.
+These are the scripts that were used in the manuscript "Low-cost, non-invasive classification of pediatric solid tumors using reduced representation bisulfite sequencing of cell-free DNA: a proof-of-principle study" on [biorxiv](https://www.biorxiv.org/content/10.1101/795047v1). See also materials and method section of the manuscript for more information.
 
 The classifier was built using publicly available data. Unfortunately, due to data-transfer agreements, it's not possible to cannot share all the source files necessary to reproduce all the results and you will have to request access to the original authors. 
 
