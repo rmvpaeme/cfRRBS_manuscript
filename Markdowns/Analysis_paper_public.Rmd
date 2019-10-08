@@ -62,7 +62,7 @@ clinical_annotation <- read_excel(tf, sheet = "samples_final", skip = 1, col_nam
 clinical_annotation$Months_at_diagnosis <- as.double(clinical_annotation$Months_at_diagnosis)
 
 
-url <- "https://www.biorxiv.org/content/biorxiv/early/2019/10/07/795047/DC2/embed/media-3.xlsx?download=true"
+url <- "https://www.biorxiv.org/content/biorxiv/early/2019/10/08/795047/DC4/embed/media-4.xlsx?download=true"
 GET(url, write_disk(tf <- tempfile(fileext = ".xlsx")))
 HMW_ratio <-  read_excel(tf, sheet = "cfDNA-HMW ratio", skip = 0, col_names = TRUE )
 HMW_ratio <- HMW_ratio[!is.na(HMW_ratio$SampleID), ]
