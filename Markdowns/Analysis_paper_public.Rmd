@@ -1,7 +1,6 @@
 ---
 title: "Minimally invasive classification of pediatric solid tumors using reduced representation bisulfite sequencing of cell-free DNA: a proof-of-principle study: supplementary data"
-author: "Ruben Van Paemel"
-date: "06/08/2019"
+date: "12/05/2020"
 output:
   html_document:
     code_folding: hide
@@ -15,8 +14,16 @@ output:
     toc: yes
 ---
 
-```{r setup, collapse = TRUE, echo = FALSE, include = FALSE}
+# Rmarkdown setup 
+The most up to date data-analysis is available on [GitHub](https://github.com/rmvpaeme/cfRRBS_manuscript). 
+
+First, basic parameters are set up in this RMarkdown, such as loading dependencies, setting paths and setting up a uniform plot structure. 
+
+```{r setup, warning=FALSE, message=FALSE, echo = FALSE}
 knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+```
+
+```{r, warning=FALSE, results='hide',message=FALSE}
 require(tidyverse)
 require(reshape2)
 require(broom)
@@ -39,180 +46,534 @@ require(DT)
 
 source("HelperFunctions.R")
 
-options(scipen=10000)
+options(scipen = 10000)
 # Themes
-theme_point<-theme_classic2()+theme(strip.background = element_blank())
+theme_point <-
+  theme_classic2() + theme(strip.background = element_blank())
 
-theme_bar<-theme_classic()+theme(axis.text.x = element_text(angle=90, vjust=0.5, hjust=1),strip.background = element_blank(),axis.ticks.x = element_blank(),axis.line.x = element_blank())
+theme_bar <-
+  theme_classic() + theme(
+    axis.text.x = element_text(
+      angle = 90,
+      vjust = 0.5,
+      hjust = 1
+    ),
+    strip.background = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.line.x = element_blank()
+  )
 
-theme_boxplot<-theme_classic()+theme(axis.text.x = element_text(angle=90, vjust=0.5, hjust=1),strip.background = element_blank(),axis.ticks.x = element_blank(),axis.title.x = element_blank(),axis.line.x = element_blank(),legend.position = "none")
+theme_boxplot <-
+  theme_classic() + theme(
+    axis.text.x = element_text(
+      angle = 90,
+      vjust = 0.5,
+      hjust = 1
+    ),
+    strip.background = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.title.x = element_blank(),
+    axis.line.x = element_blank(),
+    legend.position = "none"
+  )
 
-color.A = colorRampPalette(brewer.pal(4,"BrBG"))(4)[4]
-color.B = colorRampPalette(brewer.pal(4,"BrBG"))(4)[2]
-color.C = colorRampPalette(brewer.pal(4,"BrBG"))(4)[1]
+color.A = colorRampPalette(brewer.pal(4, "BrBG"))(4)[4]
+color.B = colorRampPalette(brewer.pal(4, "BrBG"))(4)[2]
+color.C = colorRampPalette(brewer.pal(4, "BrBG"))(4)[1]
 
-url <- "https://www.biorxiv.org/content/biorxiv/early/2019/10/07/795047/DC3/embed/media-3.xlsx?download=true"
+url <-
+  "https://www.dropbox.com/s/yovbmtua0h4hx47/supplementary_table_2_analysis.xlsx?dl=1"
 GET(url, write_disk(tf <- tempfile(fileext = ".xlsx")))
-analysis <- read_excel(tf, sheet = "samples_final", skip = 1, col_names = TRUE )
-scRRBS_annotation <- read_excel(tf, sheet = "scRRBS_QC", skip = 0, col_names = TRUE )
+analysis <-
+  read_excel(tf,
+             sheet = "samples",
+             skip = 1,
+             col_names = TRUE)
+scRRBS_annotation <-
+  read_excel(tf,
+             sheet = "public_scRRBS_QC",
+             skip = 1,
+             col_names = TRUE)
 
-url <- "https://www.biorxiv.org/content/biorxiv/early/2019/10/07/795047/DC2/embed/media-2.xlsx?download=true"
+url <-
+  "https://www.biorxiv.org/content/biorxiv/early/2019/10/07/795047/DC2/embed/media-2.xlsx?download=true"
 GET(url, write_disk(tf <- tempfile(fileext = ".xlsx")))
-clinical_annotation <- read_excel(tf, sheet = "samples_final", skip = 1, col_names = TRUE )
-clinical_annotation$Months_at_diagnosis <- as.double(clinical_annotation$Months_at_diagnosis)
+clinical_annotation <-
+  read_excel(tf,
+             sheet = "samples_final",
+             skip = 1,
+             col_names = TRUE)
+clinical_annotation$Months_at_diagnosis <-
+  as.double(clinical_annotation$Months_at_diagnosis)
 
-
-url <- "https://www.biorxiv.org/content/biorxiv/early/2019/10/08/795047/DC4/embed/media-4.xlsx?download=true"
+url <-
+  "https://www.dropbox.com/s/yovbmtua0h4hx47/supplementary_table_2_analysis.xlsx?dl=1"
 GET(url, write_disk(tf <- tempfile(fileext = ".xlsx")))
-HMW_ratio <-  read_excel(tf, sheet = "cfDNA-HMW ratio", skip = 0, col_names = TRUE )
-HMW_ratio <- HMW_ratio[!is.na(HMW_ratio$SampleID), ]
+HMW_ratio <-
+  read_excel(tf,
+             sheet = "cfDNA-HMW ratio",
+             skip = 0,
+             col_names = TRUE)
+HMW_ratio <- HMW_ratio[!is.na(HMW_ratio$SampleID),]
 
-fulldeconv <- read_csv("./test_methatlas_deconv_output.csv") %>% melt()
+fulldeconv <-
+  read_excel(tf,
+             sheet = "deconvolution_output",
+             skip = 0,
+             col_names = TRUE) %>% melt()
 colnames(fulldeconv) <- c("tumor", "SampleID", "fraction")
+
+resids_result <-
+  as.data.frame(read_excel(
+    tf,
+    sheet = "residuals",
+    skip = 0,
+    col_names = TRUE
+  ))
+
+reproducibility <-
+  as.data.frame(
+    read_csv(
+      "https://www.dropbox.com/s/0ernrimdmtquiu9/reproducibility_matrix.csv?dl=1",
+      na = c("NA")
+    )
+  )
 ```
 
 # Sample annotation
 ```{r, collapse = TRUE}
-sample_annotation <- left_join(analysis, clinical_annotation, by = "SampleID")
-sample_annotation <- left_join(sample_annotation, HMW_ratio, by = "SampleID")
+sample_annotation <-
+  left_join(analysis, clinical_annotation, by = "SampleID")
 
-sample_annotation <- sample_annotation %>% mutate(ClassificationDetail = ifelse((sample_annotation$CorrectClassification == FALSE) & (sample_annotation$ClassificationResult == "Normal"), "Inconclusive", ifelse((sample_annotation$CorrectClassification == FALSE) & (sample_annotation$ClassificationResult != "Normal"), "Incorrect tumor", "Correct")))
+sample_annotation <-
+  left_join(sample_annotation, HMW_ratio, by = "SampleID")
 
-sample_annotation <- sample_annotation %>% mutate(disease_extent = ifelse(sample_annotation$Metastatic_status == "M+", "Metastatic", "Localized"))
+sample_annotation$IchorCNA_TFx <-
+  as.numeric(sample_annotation$IchorCNA_TFx)
 
-sample_annotation <- sample_annotation %>% mutate(cfRRBS_sWGS_CNA = paste0(cfRRBS_CNA,"-", sWGS_CNA))
+sample_annotation <-
+  sample_annotation %>% mutate(ClassificationDetail = ifelse((sample_annotation$CorrectClassification == FALSE) &
+                                                               (sample_annotation$ClassificationResult == "Normal"),
+                                                             "Inconclusive",
+                                                             ifelse((sample_annotation$CorrectClassification == FALSE) &
+                                                                      (sample_annotation$ClassificationResult != "Normal"),
+                                                                    "Incorrect tumor",
+                                                                    "Correct"
+                                                             )
+  ))
 
-sample_annotation$cfDNA_HMW_ratio_binned = cut(sample_annotation$cfDNA_HMW_ratio, c(-Inf, 1, 5, Inf), labels=c("High", "Medium", "Low"))
+sample_annotation <- sample_annotation %>%
+  mutate(
+    disease_extent = ifelse(
+      sample_annotation$Metastatic_status == "M+",
+      "Metastatic",
+      "Localized"
+    )
+  )
 
-sample_annotation$DNA_input_binned = cut(sample_annotation$DNA_input, c(-Inf, 5, 10, Inf), labels=c("< 5 ng", "5 - 10 ng", "> 10 ng"))
+sample_annotation <- sample_annotation %>%
+  mutate(cfRRBS_sWGS_CNA = paste0(cfRRBS_CNA, "-", sWGS_CNA))
 
-sample_annotation$ClassificationDetail <- factor(sample_annotation$ClassificationDetail, levels=c("Incorrect tumor", "Correct", "Inconclusive"))
+sample_annotation$cfDNA_HMW_ratio_binned = cut(
+  sample_annotation$cfDNA_HMW_ratio,
+  c(-Inf, 1, 5, Inf),
+  labels = c("High", "Medium", "Low")
+)
 
-sample_annotation$labelmisclas <- ifelse(sample_annotation$ClassificationDetail == "Incorrect tumor", sample_annotation$ClassificationResult, "")
+sample_annotation$DNA_input_binned = cut(sample_annotation$DNA_input,
+                                         c(-Inf, 5, 10, Inf),
+                                         labels = c("< 5 ng", "5 - 10 ng", "> 10 ng"))
 
-datatable(sample_annotation, rownames = TRUE, filter="top", options = list(pageLength = 5, scrollX=T), caption = "Overview of the sample annotation (analysis QC + sequencing QC + clinical data")
+sample_annotation$ClassificationDetail <-
+  factor(
+    sample_annotation$ClassificationDetail,
+    levels = c("Incorrect tumor", "Correct", "Inconclusive")
+  )
+
+sample_annotation$labelmisclas <-
+  ifelse(
+    sample_annotation$ClassificationDetail == "Incorrect tumor",
+    sample_annotation$ClassificationResult,
+    ""
+  )
+
+datatable(
+  sample_annotation,
+  rownames = TRUE,
+  filter = "top",
+  options = list(pageLength = 5, scrollX = T),
+  caption = "Overview of the sample annotation (analysis QC + sequencing QC + clinical data)"
+)
 ```
 
 ```{r}
-datatable(describe(sample_annotation, omit = TRUE, quant = c(.25,.75)), rownames = TRUE, filter="top", options = list(pageLength = 5, scrollX=T), caption = "Descriptive statistics of the sample annotation table")
+datatable(
+  describe(
+    sample_annotation,
+    omit = TRUE,
+    quant = c(.25, .75)
+  ),
+  rownames = TRUE,
+  filter = "top",
+  options = list(pageLength = 5, scrollX = T),
+  caption = "Descriptive statistics of the sample annotation table"
+)
 ```
 
 # Correct and misclassifications
-```{r, collapse = TRUE, echo = FALSE, comment = NA}
+```{r, collapse = TRUE, echo = FALSE, comment = NA, include = TRUE}
 print("Overall")
-print(paste0("The number of correct classifications: ", sum(sample_annotation$CorrectClassification, na.rm = TRUE)))
-print(paste0("The number of misclassifications: ", length(sample_annotation$CorrectClassification) - sum(sample_annotation$CorrectClassification, na.rm = TRUE)))
-print(paste0("The number of total samples: ", length(sample_annotation$CorrectClassification)))
-print(paste0("The percentage of correct classifications: ", round(sum(sample_annotation$CorrectClassification, na.rm = TRUE)/length(sample_annotation$CorrectClassification)*100, 2),"%"))
+print(paste0(
+  "The number of correct classifications: ",
+  sum(sample_annotation$CorrectClassification, na.rm = TRUE)
+))
+print(paste0(
+  "The number of misclassifications: ",
+  length(sample_annotation$CorrectClassification) - sum(sample_annotation$CorrectClassification, na.rm = TRUE)
+))
+print(paste0(
+  "The number of total samples: ",
+  length(sample_annotation$CorrectClassification)
+))
+print(paste0(
+  "The percentage of correct classifications: ",
+  round(
+    sum(sample_annotation$CorrectClassification, na.rm = TRUE) / length(sample_annotation$CorrectClassification) *
+      100,
+    2
+  ),
+  "%"
+))
 
+print("")
 print("CNV profiles")
-sample_annotation_flatCNV <- sample_annotation %>% filter(sWGS_CNA == "Flat")
-print(paste0("The number of correct classifications with flat CNV profile: ", sum(sample_annotation_flatCNV$CorrectClassification, na.rm = TRUE)))
-print(paste0("The number of misclassifications with flat CNV profile: ", length(sample_annotation_flatCNV$CorrectClassification) - sum(sample_annotation_flatCNV$CorrectClassification, na.rm = TRUE)))
-print(paste0("The number of total samples with flat CNV profile: ", length(sample_annotation_flatCNV$CorrectClassification)))
-print(paste0("The percentage of correct classifications with flat CNV profile: ", round(sum(sample_annotation_flatCNV$CorrectClassification, na.rm = TRUE)/length(sample_annotation_flatCNV$CorrectClassification)*100, 2),"%"))
+sample_annotation_flatCNV <-
+  sample_annotation %>% filter(sWGS_CNA == "Flat")
+print(paste0(
+  "The number of correct classifications with flat CNV profile: ",
+  sum(sample_annotation_flatCNV$CorrectClassification, na.rm = TRUE)
+))
+print(paste0(
+  "The number of misclassifications with flat CNV profile: ",
+  length(sample_annotation_flatCNV$CorrectClassification) - sum(sample_annotation_flatCNV$CorrectClassification, na.rm = TRUE)
+))
+print(paste0(
+  "The number of total samples with flat CNV profile: ",
+  length(sample_annotation_flatCNV$CorrectClassification)
+))
+print(paste0(
+  "The percentage of correct classifications with flat CNV profile: ",
+  round(
+    sum(sample_annotation_flatCNV$CorrectClassification, na.rm = TRUE) / length(sample_annotation_flatCNV$CorrectClassification) *
+      100,
+    2
+  ),
+  "%"
+))
 
+print("")
 print("Higher than 10%")
-sample_annotation_10prctcutoff <- sample_annotation %>% filter(Estimated_TFx >= 0.10)
-print(paste0("The number of correct classifications with >= 10% eTFx: ", sum(sample_annotation_10prctcutoff$CorrectClassification , na.rm = TRUE)))
-print(paste0("The number of misclassifications with >= 10% eTFx: ", length(sample_annotation_10prctcutoff$CorrectClassification) - sum(sample_annotation_10prctcutoff$CorrectClassification, na.rm = TRUE)))
-print(paste0("The number of total samples with >= 10% eTFx: ", length(sample_annotation_10prctcutoff$CorrectClassification)))
-print(paste0("The percentage of correct classifications with >= 10% eTFx: ", round(sum(sample_annotation_10prctcutoff$CorrectClassification, na.rm = TRUE)/length(sample_annotation_10prctcutoff$CorrectClassification)*100, 2),"%"))
+sample_annotation_10prctcutoff <-
+  sample_annotation %>% filter(Estimated_TFx >= 0.10)
+print(paste0(
+  "The number of correct classifications with >= 10% eTFx: ",
+  sum(
+    sample_annotation_10prctcutoff$CorrectClassification ,
+    na.rm = TRUE
+  )
+))
+print(paste0(
+  "The number of misclassifications with >= 10% eTFx: ",
+  length(sample_annotation_10prctcutoff$CorrectClassification) - sum(
+    sample_annotation_10prctcutoff$CorrectClassification,
+    na.rm = TRUE
+  )
+))
+print(paste0(
+  "The number of total samples with >= 10% eTFx: ",
+  length(sample_annotation_10prctcutoff$CorrectClassification)
+))
+print(paste0(
+  "The percentage of correct classifications with >= 10% eTFx: ",
+  round(
+    sum(
+      sample_annotation_10prctcutoff$CorrectClassification,
+      na.rm = TRUE
+    ) / length(sample_annotation_10prctcutoff$CorrectClassification) * 100,
+    2
+  ),
+  "%"
+))
 
+print("")
 print("Lower than 10%")
-sample_annotation_10prctcutoff <- sample_annotation %>% filter(Estimated_TFx <= 0.10)
-print(paste0("The number of correct classifications with < 10% eTFx: ", sum(sample_annotation_10prctcutoff$CorrectClassification , na.rm = TRUE)))
-print(paste0("The number of misclassifications with < 10% eTFx: ", length(sample_annotation_10prctcutoff$CorrectClassification) - sum(sample_annotation_10prctcutoff$CorrectClassification, na.rm = TRUE)))
-print(paste0("The number of total samples with < 10% eTFx: ", length(sample_annotation_10prctcutoff$CorrectClassification)))
-print(paste0("The percentage of correct classifications with < 10% eTFx: ", round(sum(sample_annotation_10prctcutoff$CorrectClassification, na.rm = TRUE)/length(sample_annotation_10prctcutoff$CorrectClassification)*100, 2),"%"))
+sample_annotation_10prctcutoff <-
+  sample_annotation %>% filter(Estimated_TFx <= 0.10)
+print(paste0(
+  "The number of correct classifications with < 10% eTFx: ",
+  sum(
+    sample_annotation_10prctcutoff$CorrectClassification ,
+    na.rm = TRUE
+  )
+))
+print(paste0(
+  "The number of misclassifications with < 10% eTFx: ",
+  length(sample_annotation_10prctcutoff$CorrectClassification) - sum(
+    sample_annotation_10prctcutoff$CorrectClassification,
+    na.rm = TRUE
+  )
+))
+print(paste0(
+  "The number of total samples with < 10% eTFx: ",
+  length(sample_annotation_10prctcutoff$CorrectClassification)
+))
+print(paste0(
+  "The percentage of correct classifications with < 10% eTFx: ",
+  round(
+    sum(
+      sample_annotation_10prctcutoff$CorrectClassification,
+      na.rm = TRUE
+    ) / length(sample_annotation_10prctcutoff$CorrectClassification) * 100,
+    2
+  ),
+  "%"
+))
 
+print("")
 print("Lower than 1%")
-sample_annotation_1prctcutoff <- sample_annotation %>% filter(Estimated_TFx <= 0.010)
-print(paste0("The number of correct classifications with < 1% eTFx: ", sum(sample_annotation_1prctcutoff$CorrectClassification , na.rm = TRUE)))
-print(paste0("The number of misclassifications with < 1% eTFx: ", length(sample_annotation_1prctcutoff$CorrectClassification) - sum(sample_annotation_10prctcutoff$CorrectClassification, na.rm = TRUE)))
-print(paste0("The number of total samples with < 1% eTFx: ", length(sample_annotation_1prctcutoff$CorrectClassification)))
-print(paste0("The percentage of correct classifications with < 1% eTFx: ", round(sum(sample_annotation_1prctcutoff$CorrectClassification, na.rm = TRUE)/length(sample_annotation_1prctcutoff$CorrectClassification)*100, 2),"%"))
+sample_annotation_1prctcutoff <-
+  sample_annotation %>% filter(Estimated_TFx <= 0.010)
+print(paste0(
+  "The number of correct classifications with < 1% eTFx: ",
+  sum(sample_annotation_1prctcutoff$CorrectClassification , na.rm = TRUE)
+))
+print(paste0(
+  "The number of misclassifications with < 1% eTFx: ",
+  length(sample_annotation_1prctcutoff$CorrectClassification) - sum(sample_annotation_1prctcutoff$CorrectClassification, na.rm = TRUE)
+))
+print(paste0(
+  "The number of total samples with < 1% eTFx: ",
+  length(sample_annotation_1prctcutoff$CorrectClassification)
+))
+print(paste0(
+  "The percentage of correct classifications with < 1% eTFx: ",
+  round(
+    sum(sample_annotation_1prctcutoff$CorrectClassification, na.rm = TRUE) /
+      length(sample_annotation_1prctcutoff$CorrectClassification) * 100,
+    2
+  ),
+  "%"
+))
 ```
 
 # Library & Sequencing QC
 ## Reads after trimming
-- The number of reads after adaptor trimming with Trim Galore is similar for all samples.
+All samples had at least +- 15M reads.
 
 ```{r}
-sample_annotation$CorrectClassification <- as.character(sample_annotation$CorrectClassification)
+sample_annotation$CorrectClassification <-
+  as.character(sample_annotation$CorrectClassification)
 
-sample_annotation$CorrectClassification <- ifelse(sample_annotation$CorrectClassification == "TRUE", "Correct", "Incorrect")
+sample_annotation$CorrectClassification <-
+  ifelse(sample_annotation$CorrectClassification == "TRUE",
+         "Correct",
+         "Incorrect")
 
-ggplot(sample_annotation, aes(x = M_Seqs , y = GraphTumor, col = ClassificationDetail)) +
-geom_beeswarm(color = "black", cex = 2, size = 2, groupOnX = FALSE) + geom_beeswarm(cex = 2, size = 1.5, groupOnX = FALSE) + theme_point + labs(y = "Tumor type", x = "# reads (M)", col = "Classification call", title = "Number of reads after adaptor trimming")  + xlim(0, 40) +theme(panel.grid.major.y=element_line(linetype = "dashed",color="gray88"), axis.text.y=element_text(size=8))
+ggplot(sample_annotation,
+       aes(x = M_Seqs , y = GraphTumor, col = ClassificationDetail)) +
+  geom_beeswarm(
+    color = "black",
+    cex = 2,
+    size = 2,
+    groupOnX = FALSE
+  ) + geom_beeswarm(cex = 2,
+                    size = 1.5,
+                    groupOnX = FALSE) + theme_point + labs(y = "Tumor type",
+                                                           x = "# reads (M)",
+                                                           col = "Classification call",
+                                                           title = "Number of reads after adaptor trimming")  + xlim(0, 40) + theme(
+                                                             panel.grid.major.y = element_line(linetype = "dashed", color = "gray88"),
+                                                             axis.text.y = element_text(size = 8)
+                                                           )
 ```
 
 ## Genome-wide methylation
-- The genome wide methylation of CpGs is similar for all samples. There does not seem to be hypo- or hypermethylation for specific tumor types. Furthermore, misclassified samples are also not hyper or hypomethylated.
+The genome wide methylation of CpGs is similar for all samples. There does not seem to be hypo- or hypermethylation for specific tumor types. Furthermore, misclassified samples are also not hyper or hypomethylated.
 
 ```{r}
-ggplot(sample_annotation, aes(x = Prct_mCpG, y = GraphTumor, col = ClassificationDetail)) +
-geom_beeswarm(color = "black", cex = 2, size = 2, groupOnX = FALSE) + geom_beeswarm(cex = 2, size = 1.5, groupOnX = FALSE) + theme_point + xlim(0,100) +labs(y = "Tumor type", x = "mCpG (%)", col = "Classification call", title = "Genome-wide methylation of CpGs")  + theme(panel.grid.major.y=element_line(linetype = "dashed",color="gray88"), axis.text.y=element_text(size=8))
+ggplot(sample_annotation,
+       aes(x = Prct_mCpG, y = GraphTumor, col = ClassificationDetail)) +
+  geom_beeswarm(
+    color = "black",
+    cex = 2,
+    size = 2,
+    groupOnX = FALSE
+  ) + geom_beeswarm(cex = 2,
+                    size = 1.5,
+                    groupOnX = FALSE) + theme_point + xlim(0, 100) + labs(y = "Tumor type",
+                                                                          x = "mCpG (%)",
+                                                                          col = "Classification call",
+                                                                          title = "Genome-wide methylation of CpGs")  + theme(
+                                                                            panel.grid.major.y = element_line(linetype = "dashed", color = "gray88"),
+                                                                            axis.text.y = element_text(size = 8)
+                                                                          )
 ```
 
 ## Percentage of on-bait bases
-- In general, almost all reads map within the expected regions (MspI fragments between 20 and 200 bp, evaluated with Picard HSmetrics). There are some outliers, but again this does not seem to be associated with misclassifications.
+In general, almost all reads map within the expected regions (MspI fragments between 20 and 200 bp, evaluated with Picard HSmetrics). There are some outliers, but again this does not seem to be associated with misclassifications.
 
 ```{r}
-ggplot(sample_annotation, aes(x = Prct_OnBaitBases, y = GraphTumor, col = ClassificationDetail)) +
-geom_beeswarm(color = "black", cex = 2, size = 2, groupOnX = FALSE) + geom_beeswarm(cex = 2, size = 1.5, groupOnX = FALSE)   + theme_point + xlim(0,100) + labs(y = "Tumor type", x = "On bait bases (%)", col = "Classification call", title = "Percentage of all reads mapping to \n MspI fragments between 20 and 200 bp") + theme(panel.grid.major.y=element_line(linetype = "dashed",color="gray88"), axis.text.y=element_text(size=8))
+ggplot(
+  sample_annotation,
+  aes(x = Prct_OnBaitBases, y = GraphTumor, col = ClassificationDetail)
+) +
+  geom_beeswarm(
+    color = "black",
+    cex = 2,
+    size = 2,
+    groupOnX = FALSE
+  ) + geom_beeswarm(cex = 2,
+                    size = 1.5,
+                    groupOnX = FALSE)   + theme_point + xlim(0, 100) + labs(y = "Tumor type",
+                                                                            x = "On bait bases (%)",
+                                                                            col = "Classification call",
+                                                                            title = "Percentage of all reads mapping to \n MspI fragments between 20 and 200 bp") + theme(
+                                                                              panel.grid.major.y = element_line(linetype = "dashed", color = "gray88"),
+                                                                              axis.text.y = element_text(size = 8)
+                                                                            )
 ```
 
 ## Mapping efficiency
-- The mapping efficiency is usually around 50% (reads uniquely mapping to GRCh37 with Bismark). Outliers here are again not associated with misclassifications.
+The mapping efficiency is usually around 50% (reads uniquely mapping to GRCh37 with Bismark). Outliers here are again not associated with misclassifications.
 
 ```{r}
-ggplot(sample_annotation, aes(x = Prct_Aligned, y = GraphTumor, col = ClassificationDetail)) +
-  geom_beeswarm(color = "black", cex = 2, size = 2, groupOnX = FALSE) + geom_beeswarm(cex = 2, size = 1.5, groupOnX = FALSE) + theme_point + xlim(0,100) + labs(title = "Reads mapping uniquely to GRCh37 (with Bismark)", y = "Tumor type", x = "Aligned (%)", col = "Classification call") + theme(panel.grid.major.y=element_line(linetype = "dashed",color="gray88"), axis.text.y=element_text(size=8))
+ggplot(sample_annotation,
+       aes(x = Prct_Aligned, y = GraphTumor, col = ClassificationDetail)) +
+  geom_beeswarm(
+    color = "black",
+    cex = 2,
+    size = 2,
+    groupOnX = FALSE
+  ) + geom_beeswarm(cex = 2,
+                    size = 1.5,
+                    groupOnX = FALSE) + theme_point + xlim(0, 100) + labs(title = "Reads mapping uniquely to GRCh37 (with Bismark)",
+                                                                          y = "Tumor type",
+                                                                          x = "Aligned (%)",
+                                                                          col = "Classification call") + theme(
+                                                                            panel.grid.major.y = element_line(linetype = "dashed", color = "gray88"),
+                                                                            axis.text.y = element_text(size = 8)
+                                                                          )
 ```
 
 ## Bisulfite conversion efficiency
-- Bisulfite conversion was successful in every sample (>95% bisulfite conversion efficiency). Assessed by mapping to the spiked-in lambda genome.
+Bisulfite conversion was successful in every sample (>95% bisulfite conversion efficiency). Assessed by mapping to the spiked-in lambda genome.
 
 ```{r}
-ggplot(sample_annotation, aes(x = 100 - Prct_Lambda_mCpG, y = GraphTumor, col = ClassificationDetail)) +
-  geom_beeswarm(color = "black", cex = 2, size = 2, groupOnX = FALSE) + geom_beeswarm(cex = 2, size = 1.5, groupOnX = FALSE) + theme_point + xlim(92,100) + labs(title = "Bisulfite conversion efficiency", y = "Tumor type", x = "Bisulfite conversion efficiency (%)", col = "Classification call") + theme(panel.grid.major.y=element_line(linetype = "dashed",color="gray88"), axis.text.y=element_text(size=8))
+ggplot(
+  sample_annotation,
+  aes(
+    x = 100 - Prct_Lambda_mCpG,
+    y = GraphTumor,
+    col = ClassificationDetail
+  )
+) +
+  geom_beeswarm(
+    color = "black",
+    cex = 2,
+    size = 2,
+    groupOnX = FALSE
+  ) + geom_beeswarm(cex = 2,
+                    size = 1.5,
+                    groupOnX = FALSE) + theme_point + xlim(92, 100) + labs(title = "Bisulfite conversion efficiency",
+                                                                           y = "Tumor type",
+                                                                           x = "Bisulfite conversion efficiency (%)",
+                                                                           col = "Classification call") + theme(
+                                                                             panel.grid.major.y = element_line(linetype = "dashed", color = "gray88"),
+                                                                             axis.text.y = element_text(size = 8)
+                                                                           )
 ```
 
 ## cfDNA input (ng)
-- cfDNA input ranged from undetectable with Qubit (< 0.05 ng/µL) to 60 ng. The distributions between correctly classified and misclassified samples is not significantly different.
+cfDNA input ranged from undetectable with Qubit (< 0.05 ng/µL) to 60 ng. The distributions between correctly classified and misclassified samples is not significantly different.
 
 ```{r}
-ggplot(sample_annotation, aes(y = DNA_input, x = CorrectClassification, col = ClassificationDetail)) + geom_beeswarm(color = "black", cex = 2.5, size = 2) + geom_beeswarm(cex = 2.5, size = 1.5) + theme_point + stat_compare_means(label = "p.signif", comparisons = list(c("Correct", "Incorrect")), tip.length = 0, bracket.size = 0.5) + labs(title = "No association between DNA input and classification accuracy", y = "DNA input (ng)", x = "Correct classification", col = "Classification call") 
+ggplot(
+  sample_annotation,
+  aes(y = DNA_input, x = CorrectClassification, col = ClassificationDetail)
+) + geom_beeswarm(color = "black", cex = 2.5, size = 2) + geom_beeswarm(cex = 2.5, size = 1.5) + theme_point + stat_compare_means(
+  label = "p.format",
+  comparisons = list(c("Correct", "Incorrect")),
+  tip.length = 0,
+  bracket.size = 0.5
+) + labs(title = "No association between DNA input and classification accuracy",
+         y = "DNA input (ng)",
+         x = "Correct classification",
+         col = "Classification call") 
 ```
 
 ## On bait bases vs scRRBS
 
 ```{r, collapse = TRUE, echo = FALSE, comment = NA}
-scRRBS_comp <- merge(sample_annotation, scRRBS_annotation %>% filter(Protocol != "NA") %>% rename("Prct_OnBaitBases" = `% On bait bases`), by = c("Protocol", "Prct_OnBaitBases"),all=TRUE)
+scRRBS_comp <-
+  merge(
+    sample_annotation,
+    scRRBS_annotation %>% filter(Protocol != "NA") %>% rename("Prct_OnBaitBases" = `% On bait bases`),
+    by = c("Protocol", "Prct_OnBaitBases"),
+    all = TRUE
+  )
 
-print(wmwTest(scRRBS_comp$Prct_OnBaitBases~scRRBS_comp$Protocol))
+print(wmwTest(scRRBS_comp$Prct_OnBaitBases ~ scRRBS_comp$Protocol))
 
-ggplot(scRRBS_comp, aes(y = Prct_OnBaitBases, x = Protocol, col = Protocol)) + geom_boxplot(show.legend = FALSE,  width = 0.3) + 
-  ylim(0,100) + theme_point + stat_compare_means(label = "p.format", comparisons = list(c("cfRRBS", "scRRBS")), tip.length = 0, bracket.size = 0.5) + labs(title = "cfRRBS enriches more for MspI regions compared to scRRBS ", y = "On bait bases (%)", x = "Protocol", col = "Protocol") + scale_color_manual(values=c(color.A, color.C))
+ggplot(scRRBS_comp,
+       aes(y = Prct_OnBaitBases, x = Protocol, col = Protocol)) + geom_boxplot(show.legend = FALSE,  width = 0.3) +
+  ylim(0, 100) + theme_point + stat_compare_means(
+    label = "p.format",
+    comparisons = list(c("cfRRBS", "scRRBS")),
+    tip.length = 0,
+    bracket.size = 0.5
+  ) + labs(title = "cfRRBS enriches more for MspI regions compared to scRRBS ",
+           y = "On bait bases (%)",
+           x = "Protocol",
+           col = "Protocol") + scale_color_manual(values = c(color.A, color.C))
 print("cfRRBS % on bait:")
-describe(scRRBS_comp %>% filter(Protocol == "cfRRBS"), omit = TRUE, quant = c(.25,.75))["Prct_OnBaitBases",]
+describe(
+  scRRBS_comp %>% filter(Protocol == "cfRRBS"),
+  omit = TRUE,
+  quant = c(.25, .75)
+)["Prct_OnBaitBases", ]
 
 print("scRRBS % on bait:")
-describe(scRRBS_comp %>% filter(Protocol == "scRRBS"), omit = TRUE, quant = c(.25,.75))["Prct_OnBaitBases",]
+describe(
+  scRRBS_comp %>% filter(Protocol == "scRRBS"),
+  omit = TRUE,
+  quant = c(.25, .75)
+)["Prct_OnBaitBases", ]
 ```
-
-
 
 # Classification results
 ## Overall results
-
-- The samples that misclassified have a significantly lower eTFx (p < 0.001). While this is expected for samples that classify as normal, we also see this for samples that are classified as the wrong tumor.
+The samples that misclassified have a significantly lower eTFx (p = 0.0029, after omitting the "inconclusive" group).
 
 ```{r}
-class_results <- ggplot(sample_annotation, aes(x = reorder(CorrectClassification, desc(CorrectClassification)), y = Estimated_TFx*100, col = ClassificationDetail)) +
-  geom_beeswarm(color = "black", cex = 2, size = 2) + geom_beeswarm(cex = 2, size = 1.5) + theme_point + stat_compare_means(label = "p.format", comparisons = list(c("Correct", "Incorrect")), tip.length = 0,bracket.size = 0.5) + 
+class_results <-
+  ggplot(
+    sample_annotation %>% filter(ClassificationDetail != "Inconclusive"),
+    aes(
+      x = reorder(CorrectClassification, desc(CorrectClassification)),
+      y = Estimated_TFx * 100,
+      col = ClassificationDetail
+    )
+  ) +
+  geom_beeswarm(color = "black", cex = 2, size = 2) + geom_beeswarm(cex = 2, size = 1.5) + theme_point + stat_compare_means(
+    label = "p.format",
+    comparisons = list(c(1, 2)),
+    tip.length = 0,
+    bracket.size = 0.5
+  ) +
   labs(y = "Estimated TFx (%)", x = "Classfication", col = "Classification call")
+
+ggsave(file = "classification.svg", plot = ggplot2::last_plot())
+ggsave(file = "classification.png", plot = ggplot2::last_plot())
 
 class_results
 
@@ -225,26 +586,52 @@ sample_annotation %>% filter(CorrectClassification == "Incorrect") %>% select(Es
 
 ## Misclassifications by center
 ```{r}
-ggplot(sample_annotation, aes(x = reorder(Center, desc(Center)), y = Estimated_TFx*100, col = ClassificationDetail)) +
-  geom_beeswarm(color = "black", cex = 2, size = 2) + geom_beeswarm(cex = 2, size = 1.5) + theme_point + 
-  labs(y = "Estimated TFx (%)", x = "Center", col = "Classification call", title = "Misclassifications by center")
+ggplot(sample_annotation,
+       aes(
+         x = reorder(Center, desc(Center)),
+         y = Estimated_TFx * 100,
+         col = ClassificationDetail
+       )) +
+  geom_beeswarm(color = "black", cex = 2, size = 2) + geom_beeswarm(cex = 2, size = 1.5) + theme_point +
+  labs(y = "Estimated TFx (%)",
+       x = "Center",
+       col = "Classification call",
+       title = "Misclassifications by center")
 ```
 
 ## cfDNA/HMW ratio by center
 ```{r}
-ggplot(sample_annotation, aes(x = reorder(Center, desc(Center)), y = cfDNA_HMW_ratio, col = ClassificationDetail)) +
-  geom_beeswarm(color = "black", cex = 2, size = 2) + geom_beeswarm(cex = 2, size = 1.5) + theme_point + 
+ggplot(sample_annotation,
+       aes(
+         x = reorder(Center, desc(Center)),
+         y = cfDNA_HMW_ratio,
+         col = ClassificationDetail
+       )) +
+  geom_beeswarm(color = "black", cex = 2, size = 2) + geom_beeswarm(cex = 2, size = 1.5) + theme_point +
   labs(y = "cfDNA/HMW ratio", x = "Center", col = "Classification call")
 ```
 
 ## Disease extent
-- Across all tumor types, the distribution of the eTFx is not significantly different between localized disease (incl N+) and metastatic disease. This is probably dependent on the tumor type, but there are insufficient samples per group to draw definitive conclusions from this.
+Across all tumor types, the distribution of the eTFx is not significantly different between localized disease (incl N+) and metastatic disease. This is probably dependent on the tumor type, but there are insufficient samples per group to draw definitive conclusions from this.
 
 ```{r}
-print(wmwTest(sample_annotation$Estimated_TFx~sample_annotation$disease_extent))
+print(wmwTest(
+  sample_annotation$Estimated_TFx ~ sample_annotation$disease_extent
+))
 
-dz_extent <- ggplot(sample_annotation, aes(x = reorder(disease_extent, desc(disease_extent)), y = Estimated_TFx*100, col = ClassificationDetail)) +
-  geom_beeswarm(color = "black", cex = 2, size = 2) + geom_beeswarm(cex = 2, size = 1.5) + theme_point + stat_compare_means(label = "p.format", comparisons = list(c(1,2)), tip.length = 0, bracket.size = 0.5) + labs(y = "Estimated TFx (%)", x = "Disease extent", col = "Classification call")
+dz_extent <-
+  ggplot(sample_annotation,
+         aes(
+           x = reorder(disease_extent, desc(disease_extent)),
+           y = Estimated_TFx * 100,
+           col = ClassificationDetail
+         )) +
+  geom_beeswarm(color = "black", cex = 2, size = 2) + geom_beeswarm(cex = 2, size = 1.5) + theme_point + stat_compare_means(
+    label = "p.format",
+    comparisons = list(c(1, 2)),
+    tip.length = 0,
+    bracket.size = 0.5
+  ) + labs(y = "Estimated TFx (%)", x = "Disease extent", col = "Classification call")
 
 dz_extent
 
@@ -256,116 +643,353 @@ sample_annotation %>% filter(disease_extent == "Localized") %>% select(Estimated
 ```
 
 ## Classifications by tumor class
-- The classifications split by tumor class:
+The classifications split by tumor class:
 
 ```{r}
-sample_annotation$GraphTumor.ordered <- factor(sample_annotation$GraphTumor, levels=c("NBL", "aRMS", "eRMS", "OS", "EWS", "WT", "CCSK", "MRT", "MB", "ATRT"))
+sample_annotation$GraphTumor.ordered <-
+  factor(
+    sample_annotation$GraphTumor,
+    levels = c(
+      "NBL",
+      "aRMS",
+      "eRMS",
+      "OS",
+      "EWS",
+      "WT",
+      "CCSK",
+      "MRT",
+      "MB",
+      "ATRT"
+    )
+  )
 
-ggplot(sample_annotation, aes(x = reorder(GraphTumor.ordered, desc(GraphTumor.ordered)), y = Estimated_TFx*100, col = ClassificationDetail, label = labelmisclas, shape = reorder(Biomaterial, desc(Biomaterial)))) +
-  geom_beeswarm(color = "black", cex = 2, size = 2) + geom_beeswarm(cex = 2, size = 1.5) + theme_point + geom_text_repel(size=3) +
-  theme(panel.grid.major.y=element_line(linetype = "dashed",color="gray88"), axis.text.y=element_text(size=8)) +
-  labs(y = "Estimated TFx (%)", x = "Tumor type", col = "Classification call", shape = "Biomaterial") +
+ggplot(
+  sample_annotation,
+  aes(
+    x = reorder(GraphTumor.ordered, desc(GraphTumor.ordered)),
+    y = Estimated_TFx * 100,
+    col = ClassificationDetail,
+    label = labelmisclas,
+    shape = reorder(Biomaterial, desc(Biomaterial))
+  )
+) +
+  geom_beeswarm(color = "black", cex = 2, size = 2) + geom_beeswarm(cex = 2, size = 1.5) + theme_point + geom_text_repel(size =
+                                                                                                                           3, show.legend = FALSE) +
+  theme(
+    panel.grid.major.y = element_line(linetype = "dashed", color = "gray88"),
+    axis.text.y = element_text(size = 8)
+  ) +
+  labs(y = "Estimated TFx (%)",
+       x = "Tumor type",
+       col = "Classification call",
+       shape = "Biomaterial") +
   coord_flip()
+
+ggsave(file = "classification_detail.svg", plot = ggplot2::last_plot())
+ggsave(file = "classification_detail.png", plot = ggplot2::last_plot())
 ```
 
 ## Full results of meth_atlas (plasma samples only) {.tabset}
+This section contains all tumor fractions that are being detected per sample. 
+
 ### Table
 ```{r}
-fulldeconv <- fulldeconv %>% filter((tumor != "normal")) %>% filter((tumor != "wbc"))
-fulldeconv_annot <- left_join(x = sample_annotation, y = fulldeconv, by = c("SampleID" = "SampleID"))
+fulldeconv <-
+  fulldeconv %>% filter((tumor != "normal")) %>% filter((tumor != "wbc"))
+fulldeconv_annot <-
+  left_join(x = sample_annotation,
+            y = fulldeconv,
+            by = c("SampleID" = "SampleID"))
 
-datatable(fulldeconv, rownames = TRUE, filter="top", options = list(pageLength = 5, scrollX=T), caption = "The detected fractions for every sample")
+datatable(
+  fulldeconv,
+  rownames = TRUE,
+  filter = "top",
+  options = list(pageLength = 5, scrollX = T),
+  caption = "The detected fractions for every sample"
+)
 ```
-
 
 ### Estimated TFx < 10%
-
-```{r, fig.height = 15, fig.width = 20}
-ggplot(fulldeconv_annot %>% filter(Estimated_TFx < 0.10), aes(x = tumor, y = fraction, fill = ClassificationDetail))  +
-  geom_bar(stat="identity") + facet_wrap(~ SampleID + GraphTumor, scales = "free")+ theme(axis.text.x = element_text(angle = 90, hjust = 1)) + labs(x = "tumor entity", y = "detected fraction", title = "Sample deconvolution for estimated TFx less than 10%")
+```{r, fig.height = 16, fig.width = 10}
+ggplot(
+  fulldeconv_annot %>% filter(Estimated_TFx < 0.10),
+  aes(x = tumor, y = fraction, fill = ClassificationDetail)
+)  +
+  geom_bar(stat = "identity") + facet_wrap( ~ SampleID + GraphTumor, scales = "free") + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + labs(x = "tumor entity", y = "detected fraction", title = "Sample deconvolution for estimated TFx less than 10%")
 ```
-
 
 ### Estimated TFx > 10% & < 30%
-
-```{r, fig.height = 15, fig.width = 20}
-ggplot(fulldeconv_annot %>% filter((Estimated_TFx > 0.10) & (Estimated_TFx < 30)), aes(x = tumor, y = fraction, fill = ClassificationDetail))  +
-  geom_bar(stat="identity") + facet_wrap(~ SampleID + GraphTumor, scales = "free")+ theme(axis.text.x = element_text(angle = 90, hjust = 1)) + labs(x = "tumor entity", y = "detected fraction", title = "Sample deconvolution for estimated TFx between 10 and 30%")
+```{r, fig.height = 16, fig.width = 10}
+ggplot(
+  fulldeconv_annot %>% filter((Estimated_TFx > 0.10) &
+                                (Estimated_TFx < 30)),
+  aes(x = tumor, y = fraction, fill = ClassificationDetail)
+)  +
+  geom_bar(stat = "identity") + facet_wrap( ~ SampleID + GraphTumor, scales = "free") + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + labs(x = "tumor entity", y = "detected fraction", title = "Sample deconvolution for estimated TFx between 10 and 30%")
 ```
 
-
 ### Estimated TFx > 30%
-```{r, fig.height = 15, fig.width = 20}
-ggplot(fulldeconv_annot %>% filter((Estimated_TFx > 0.30)), aes(x = tumor, y = fraction, fill = ClassificationDetail))  +
-  geom_bar(stat="identity") + facet_wrap(~ SampleID + GraphTumor, scales = "free")+ theme(axis.text.x = element_text(angle = 90, hjust = 1)) + labs(x = "tumor entity", y = "detected fraction", title = "Sample deconvolution for estimated TFx higher than 30%")
+```{r, fig.height = 16, fig.width = 10}
+ggplot(fulldeconv_annot %>% filter((Estimated_TFx > 0.30)),
+       aes(x = tumor, y = fraction, fill = ClassificationDetail))  +
+  geom_bar(stat = "identity") + facet_wrap( ~ SampleID + GraphTumor, scales = "free") + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + labs(x = "tumor entity", y = "detected fraction", title = "Sample deconvolution for estimated TFx higher than 30%")
 ```
 
 
 ## Classifications by sample quality
-- Samples that have a low cfDNA-HMW ratio (so samples that contain relatively more HMW DNA), seem to have a lower estimated tumor fraction. For visualisations we also binned this, where a cfDNA-HMW ratio < 1 is high HMW contamination, a cfDNA-HMW ratio between 1 - 5 is medium HMW contamination and a cfDNA-HMW ratio > 5 is low HMW contamination, so a good quality sample.
+Samples that have a low cfDNA-HMW ratio (so samples that contain relatively more HMW DNA), seem to have a lower estimated tumor fraction. For visualisations we also binned this, where a cfDNA-HMW ratio < 1 is high HMW contamination, a cfDNA-HMW ratio between 1 - 5 is medium HMW contamination and a cfDNA-HMW ratio > 5 is low HMW contamination, so a good quality sample.
 
 ```{r}
-ratio_cont <- ggplot(sample_annotation, aes(y = Estimated_TFx*100, x = cfDNA_HMW_ratio, col = ClassificationDetail, shape = reorder(Biomaterial, desc(Biomaterial)))) + scale_x_continuous(trans = 'log10') +
-  geom_point(color = "black",  size = 2) + geom_point(size = 1.5) + theme_point + 
-  labs(y = "Estimated TFx (%)", x = "cfDNA-HMW ratio (log)",col = "Classification call", shape = "Biomaterial") + geom_vline(xintercept=1, colour="grey", linetype = "dashed") +geom_vline(xintercept=5, colour="grey", linetype = "dashed")+
-  annotate("text", x = 1, y = 90, size = 3.5,label="High HMW\n", colour="gray", angle=-270) +
-  annotate("text", x = 1, y = 90, size = 3.5,label = "\nMedium HMW", colour="gray", angle=90) +  
-  annotate("text", x = 5, y = 90, size = 3.5,label="Medium HMW\n", colour="gray", angle=-270) +
-  annotate("text", x = 5, y = 90, size = 3.5,label="\nLow HMW", colour="gray", angle=90)
+ratio_cont <-
+  ggplot(
+    sample_annotation,
+    aes(
+      y = Estimated_TFx * 100,
+      x = cfDNA_HMW_ratio,
+      col = ClassificationDetail,
+      shape = reorder(Biomaterial, desc(Biomaterial))
+    )
+  ) + scale_x_continuous(trans = 'log10') +
+  geom_point(color = "black",  size = 2) + geom_point(size = 1.5) + theme_point +
+  labs(y = "Estimated TFx (%)",
+       x = "cfDNA-HMW ratio (log)",
+       col = "Classification call",
+       shape = "Biomaterial") + geom_vline(xintercept = 1,
+                                           colour = "grey",
+                                           linetype = "dashed") + geom_vline(xintercept = 5,
+                                                                             colour = "grey",
+                                                                             linetype = "dashed") +
+  annotate(
+    "text",
+    x = 1,
+    y = 90,
+    size = 3.5,
+    label = "High HMW\n",
+    colour = "gray",
+    angle = -270
+  ) +
+  annotate(
+    "text",
+    x = 1,
+    y = 90,
+    size = 3.5,
+    label = "\nMedium HMW",
+    colour = "gray",
+    angle = 90
+  ) +
+  annotate(
+    "text",
+    x = 5,
+    y = 90,
+    size = 3.5,
+    label = "Medium HMW\n",
+    colour = "gray",
+    angle = -270
+  ) +
+  annotate(
+    "text",
+    x = 5,
+    y = 90,
+    size = 3.5,
+    label = "\nLow HMW",
+    colour = "gray",
+    angle = 90
+  )
 
 ratio_cont 
 ```
 
 ```{r, collapse = TRUE, comment = NA}
-ratio_binned <- ggplot(sample_annotation, aes(y = Estimated_TFx*100, x = cfDNA_HMW_ratio_binned, col = ClassificationDetail, shape = reorder(Biomaterial, desc(Biomaterial)))) +
-  geom_beeswarm(color = "black", cex = 2, size = 2) + geom_beeswarm(cex = 2, size = 1.5) + theme_point + 
-  labs(y = "Estimated TFx (%)", x = "HMW contamination",col = "Classification call", shape = "Biomaterial")
+ratio_binned <-
+  ggplot(
+    sample_annotation,
+    aes(
+      y = Estimated_TFx * 100,
+      x = cfDNA_HMW_ratio_binned,
+      col = ClassificationDetail,
+      shape = reorder(Biomaterial, desc(Biomaterial))
+    )
+  ) +
+  geom_beeswarm(color = "black", cex = 2, size = 2) + geom_beeswarm(cex = 2, size = 1.5) + theme_point +
+  labs(y = "Estimated TFx (%)",
+       x = "HMW contamination",
+       col = "Classification call",
+       shape = "Biomaterial")
 
 ratio_binned
 
-print(paste0("Classification accuracy in the low HMW group: ", sample_annotation %>% filter(cfDNA_HMW_ratio_binned == "Low" & ClassificationDetail == "Correct") %>% nrow, "/", sample_annotation %>% filter(cfDNA_HMW_ratio_binned == "Low") %>% nrow))
+print(
+  paste0(
+    "Classification accuracy in the low HMW group: ",
+    sample_annotation %>% filter(
+      cfDNA_HMW_ratio_binned == "Low" &
+        ClassificationDetail == "Correct"
+    ) %>% nrow,
+    "/",
+    sample_annotation %>% filter(cfDNA_HMW_ratio_binned == "Low") %>% nrow
+  )
+)
 
-print(paste0("Classification accuracy in the medium HMW group: ", sample_annotation %>% filter(cfDNA_HMW_ratio_binned == "Medium" & ClassificationDetail == "Correct") %>% nrow, "/", sample_annotation %>% filter(cfDNA_HMW_ratio_binned == "Medium") %>% nrow))
+print(
+  paste0(
+    "Classification accuracy in the medium HMW group: ",
+    sample_annotation %>% filter(
+      cfDNA_HMW_ratio_binned == "Medium" &
+        ClassificationDetail == "Correct"
+    ) %>% nrow,
+    "/",
+    sample_annotation %>% filter(cfDNA_HMW_ratio_binned == "Medium") %>% nrow
+  )
+)
 
-print(paste0("Classification accuracy in the high HMW group: ", sample_annotation %>% filter(cfDNA_HMW_ratio_binned == "High" & ClassificationDetail == "Correct") %>% nrow, "/", sample_annotation %>% filter(cfDNA_HMW_ratio_binned == "High") %>% nrow))
+print(
+  paste0(
+    "Classification accuracy in the high HMW group: ",
+    sample_annotation %>% filter(
+      cfDNA_HMW_ratio_binned == "High" &
+        ClassificationDetail == "Correct"
+    ) %>% nrow,
+    "/",
+    sample_annotation %>% filter(cfDNA_HMW_ratio_binned == "High") %>% nrow
+  )
+)
 
-print(paste0("Classification accuracy in the medium + high HMW group: ", sample_annotation %>% filter((cfDNA_HMW_ratio_binned == "Medium" | cfDNA_HMW_ratio_binned == "High" ) & ClassificationDetail == "Correct") %>% nrow, "/", sample_annotation %>% filter((cfDNA_HMW_ratio_binned == "Medium" | cfDNA_HMW_ratio_binned == "High" )) %>% nrow))
-
+print(
+  paste0(
+    "Classification accuracy in the medium + high HMW group: ",
+    sample_annotation %>% filter((
+      cfDNA_HMW_ratio_binned == "Medium" |
+        cfDNA_HMW_ratio_binned == "High"
+    ) &
+      ClassificationDetail == "Correct"
+    ) %>% nrow,
+    "/",
+    sample_annotation %>% filter((
+      cfDNA_HMW_ratio_binned == "Medium" |
+        cfDNA_HMW_ratio_binned == "High"
+    )
+    ) %>% nrow
+  )
+)
 
 print("Samples with discordant CNV profiles")
-sample_annotation_CNAFlat <- sample_annotation %>% filter(cfRRBS_sWGS_CNA  == "Flat-CNA")
-print(paste0("Low HMW: ", sample_annotation_CNAFlat %>% filter(cfDNA_HMW_ratio_binned == "Low") %>% nrow()))
-print(paste0("High HMW: ", sample_annotation_CNAFlat %>% filter(cfDNA_HMW_ratio_binned == "High") %>% nrow()))
-print(paste0("Medium HMW: ", sample_annotation_CNAFlat %>% filter(cfDNA_HMW_ratio_binned == "Medium") %>% nrow()))
+sample_annotation_CNAFlat <-
+  sample_annotation %>% filter(cfRRBS_sWGS_CNA  == "Flat-CNA")
+print(paste0(
+  "Low HMW: ",
+  sample_annotation_CNAFlat %>% filter(cfDNA_HMW_ratio_binned == "Low") %>% nrow()
+))
+print(paste0(
+  "High HMW: ",
+  sample_annotation_CNAFlat %>% filter(cfDNA_HMW_ratio_binned == "High") %>% nrow()
+))
+print(paste0(
+  "Medium HMW: ",
+  sample_annotation_CNAFlat %>% filter(cfDNA_HMW_ratio_binned == "Medium") %>% nrow()
+))
 print(paste0("Total Flat-CNA: ", sample_annotation_CNAFlat %>% nrow()))
 
 print("Samples with concordant CNV profiles")
-sample_annotation_CNACNA <- sample_annotation %>% filter((cfRRBS_sWGS_CNA  == "CNA-CNA") | (cfRRBS_sWGS_CNA  == "Flat-Flat") )
+sample_annotation_CNACNA <-
+  sample_annotation %>% filter((cfRRBS_sWGS_CNA  == "CNA-CNA") |
+                                 (cfRRBS_sWGS_CNA  == "Flat-Flat"))
 
-sample_annotation %>% filter((cfRRBS_sWGS_CNA  == "CNA-CNA")) %>% select(CNV_pearson) %>% summary 
+sample_annotation %>% filter((cfRRBS_sWGS_CNA  == "CNA-CNA")) %>% select(CNV_pearson) %>% summary
 
-print(paste0("Low HMW: ", sample_annotation_CNACNA %>% filter(cfDNA_HMW_ratio_binned == "Low") %>% nrow()))
-print(paste0("High HMW: ", sample_annotation_CNACNA  %>% filter(cfDNA_HMW_ratio_binned == "High") %>% nrow()))
-print(paste0("Medium HMW: ", sample_annotation_CNACNA  %>% filter(cfDNA_HMW_ratio_binned == "Medium") %>% nrow()))
-print(paste0("Total CNA-CNA or Flat-Flat: ", sample_annotation_CNACNA  %>% nrow()))
+print(paste0(
+  "Low HMW: ",
+  sample_annotation_CNACNA %>% filter(cfDNA_HMW_ratio_binned == "Low") %>% nrow()
+))
+print(paste0(
+  "High HMW: ",
+  sample_annotation_CNACNA  %>% filter(cfDNA_HMW_ratio_binned == "High") %>% nrow()
+))
+print(paste0(
+  "Medium HMW: ",
+  sample_annotation_CNACNA  %>% filter(cfDNA_HMW_ratio_binned == "Medium") %>% nrow()
+))
+print(paste0(
+  "Total CNA-CNA or Flat-Flat: ",
+  sample_annotation_CNACNA  %>% nrow()
+))
 
 print("Summary of correctly classified tumors:")
 sample_annotation %>% filter(disease_extent == "Metastatic") %>% select(Estimated_TFx) %>% summary
 
-datatable(describe(sample_annotation_CNACNA, omit = TRUE, quant = c(.25,.75)), rownames = TRUE, filter="top", options = list(pageLength = 5, scrollX=T), caption = "Descriptive statistics of concordant samples (either CNA-CNA or flat-flat)" )
-
+datatable(
+  describe(
+    sample_annotation_CNACNA,
+    omit = TRUE,
+    quant = c(.25, .75)
+  ),
+  rownames = TRUE,
+  filter = "top",
+  options = list(pageLength = 5, scrollX = T),
+  caption = "Descriptive statistics of concordant samples (either CNA-CNA or flat-flat)"
+)
 ```
 
 ## IchorCNA - cfRRBS tumor fraction estimation
-- There is a good correlation between IchorCNA and cfRRBS to estimate the tumor fraction for samples with medium to low HMW contamination. Although the Pearson R seems to be higher in the Medium HMW contamination group, this is possibly due to the fact that there are less samples in that group.
+There is a good correlation between IchorCNA and cfRRBS to estimate the tumor fraction for samples with medium to low HMW contamination. Although the Spearman R seems to be higher in the Medium HMW contamination group, this is possibly due to the fact that there are less samples in that group.
 
 ```{r}
-ggplot(sample_annotation, aes(y = Estimated_TFx*100, x = IchorCNA_TFx*100, col = cfDNA_HMW_ratio_binned, fill = cfDNA_HMW_ratio_binned)) +
-  geom_smooth(method="lm", se = TRUE)+ geom_point(color = "black", size = 2) + geom_point(size = 1.5) + theme_point +
-  geom_abline(slope=1, intercept=0, color = "gray", linetype = "dashed") +
-  labs(x = "CNV-based eTFx (%)", y = "Methylation-based eTFx (%)", col = "HMW contamination", shape = "HMW contamination", fill = "HMW contamination", title = "Correlation between IchorCNA and cfRRBS-\nbased tumor fraction estimation") + ylim(NA, 100) + xlim(NA, 100) + stat_cor(method = "spearman", aes(label=paste(..r.label.., ifelse(..p.value..< 0.001, "'p < 0.001**'", 
-                                                ifelse(..p.value..>=0.001 & ..p.value..<0.05, "'p < 0.05*'", paste("'p='",round(..p.value..,2), sep = "~"))),sep = "~")))+ scale_color_brewer(palette="Greens") + scale_fill_brewer(palette="Greens") 
+ggplot(
+  sample_annotation,
+  aes(
+    y = Estimated_TFx * 100,
+    x = IchorCNA_TFx * 100,
+    col = cfDNA_HMW_ratio_binned,
+    fill = cfDNA_HMW_ratio_binned
+  )
+) +
+  geom_smooth(method = "lm", se = TRUE) + geom_point(color = "black", size = 2) + geom_point(size = 1.5) + theme_point +
+  geom_abline(
+    slope = 1,
+    intercept = 0,
+    color = "gray",
+    linetype = "dashed"
+  ) +
+  labs(
+    x = "CNV-based eTFx (%)",
+    y = "Methylation-based eTFx (%)",
+    col = "HMW contamination",
+    shape = "HMW contamination",
+    fill = "HMW contamination",
+    title = "Correlation between IchorCNA and cfRRBS-\nbased tumor fraction estimation"
+  ) + ylim(NA, 100) + xlim(NA, 100) + stat_cor(method = "spearman") + scale_color_brewer(palette = "Greens") + scale_fill_brewer(palette =
+                                                                                                                                             "Greens") 
 ```
+
+## WisecondorX vs ichorCNA
+If no CNAs are seen with WisecondorX, the CNV-based eTFx is close to 0.
+
+```{r}
+ggplot(
+  sample_annotation,
+  aes(
+    y = IchorCNA_TFx * 100,
+    x =  sWGS_CNA ,
+    col = cfDNA_HMW_ratio_binned,
+    fill = cfDNA_HMW_ratio_binned
+  )
+) +
+  geom_beeswarm(color = "black", cex = 2, size = 2) + geom_beeswarm(cex = 2, size = 1.5) + theme_point +
+  labs(
+    x = "WisecondorX result",
+    y = "IchorCNA-based eTFx (%)",
+    col = "HMW contamination",
+    fill = "HMW contamination",
+    title = "IchorCNA vs WisecondorX"
+  )
+
+describe(
+  sample_annotation %>% filter(sWGS_CNA == "Flat") %>% select(IchorCNA_TFx) %>% pull(),
+  omit = TRUE,
+  quant = c(.25, .75)
+)
+```
+
 
 ## cfRRBS - sWGS CNA correlation
 - If we can detect CNA with the cfRRBS method, the correlation with sWGS is high if enough input DNA was used.
@@ -373,19 +997,60 @@ ggplot(sample_annotation, aes(y = Estimated_TFx*100, x = IchorCNA_TFx*100, col =
 - The discordant samples (Flat with cfRRBS, CNA with sWGS) are again due to HMW contamination (dilution of the cfDNA peak).
 
 ```{r}
-#paste0("Number of samples with CNA: ", length(sample_annotation$sWGS_CNA [sample_annotation$sWGS_CNA == "CNA" ])) 
+ggplot(
+  sample_annotation,
+  aes(
+    x = cfRRBS_sWGS_CNA,
+    y = CNV_pearson,
+    fill = cfDNA_HMW_ratio_binned,
+    size = DNA_input_binned
+  )
+)  + scale_size_discrete(range = c(1, 4)) +
+  geom_beeswarm(
+    shape = 21,
+    cex = 3,
+    color = "black",
+    stroke = 0.8
+  ) + theme_point +
+  labs(
+    title = "Correlation between sWGS and cfRRBS-based \n CNV calling",
+    x = "cfRRBS - sWGS copy number aberrations",
+    y = "Pearson R",
+    size = "DNA input (ng)",
+    shape = "HMW contamination",
+    fill = "HMW contamination"
+  ) + scale_fill_brewer(palette = "Greens")
 
-ggplot(sample_annotation, aes(x = cfRRBS_sWGS_CNA, y = CNV_pearson, fill = cfDNA_HMW_ratio_binned, size = DNA_input_binned))  + scale_size_discrete(range=c(1,4)) +
-  geom_beeswarm(shape = 21, cex = 3, color = "black", stroke = 0.8) + theme_point + 
-  labs(title = "Correlation between sWGS and cfRRBS-based \n CNV calling", x = "cfRRBS - sWGS copy number aberrations", y = "Pearson R", size = "DNA input (ng)", shape = "HMW contamination", fill = "HMW contamination") + scale_fill_brewer(palette="Greens")
 
+ConcordantLowToMed <-
+  sample_annotation %>% filter((
+    cfDNA_HMW_ratio_binned == "Medium" |
+      cfDNA_HMW_ratio_binned == "Low"
+  ) &
+    (cfRRBS_sWGS_CNA == "CNA-CNA"  |
+       cfRRBS_sWGS_CNA == "Flat-Flat")
+  ) %>% nrow()
+ConcordantHigh <-
+  sample_annotation %>% filter((cfDNA_HMW_ratio_binned == "High") &
+                                 (cfRRBS_sWGS_CNA == "CNA-CNA"  |
+                                    cfRRBS_sWGS_CNA == "Flat-Flat")
+  ) %>% nrow()
+DiscordantLowToMed <-
+  sample_annotation %>% filter((
+    cfDNA_HMW_ratio_binned == "Medium" |
+      cfDNA_HMW_ratio_binned == "Low"
+  ) & (cfRRBS_sWGS_CNA == "Flat-CNA")
+  ) %>% nrow()
+DiscordantHigh <-
+  sample_annotation %>% filter((cfDNA_HMW_ratio_binned == "High") &
+                                 (cfRRBS_sWGS_CNA == "Flat-CNA")) %>% nrow()
 
-ConcordantLowToMed <- sample_annotation %>% filter((cfDNA_HMW_ratio_binned == "Medium" | cfDNA_HMW_ratio_binned == "Low") & (cfRRBS_sWGS_CNA == "CNA-CNA"  | cfRRBS_sWGS_CNA =="Flat-Flat" )) %>% nrow()
-ConcordantHigh <- sample_annotation %>% filter((cfDNA_HMW_ratio_binned == "High") & (cfRRBS_sWGS_CNA == "CNA-CNA"  | cfRRBS_sWGS_CNA =="Flat-Flat" )) %>% nrow()
-DiscordantLowToMed <- sample_annotation %>% filter((cfDNA_HMW_ratio_binned == "Medium" | cfDNA_HMW_ratio_binned == "Low") & (cfRRBS_sWGS_CNA == "Flat-CNA")) %>% nrow()
-DiscordantHigh <- sample_annotation %>% filter((cfDNA_HMW_ratio_binned == "High") & (cfRRBS_sWGS_CNA == "Flat-CNA")) %>% nrow()
-
-FisherTest_df <- data.frame(row.names = c("Concordant", "Discordant"), LowToMed = c(ConcordantLowToMed,DiscordantLowToMed), High = c(ConcordantHigh, DiscordantHigh))
+FisherTest_df <-
+  data.frame(
+    row.names = c("Concordant", "Discordant"),
+    LowToMed = c(ConcordantLowToMed, DiscordantLowToMed),
+    High = c(ConcordantHigh, DiscordantHigh)
+  )
 
 chisq.test(FisherTest_df)
 ```
@@ -393,333 +1058,221 @@ chisq.test(FisherTest_df)
 # NNLS model evaluation
 
 ```{r, include = TRUE}
-resids_result <- as.data.frame(read_csv("https://www.dropbox.com/s/g9d3bb1tm2la95l/methatlas_deconv_output_extracranial_residuals.csv?dl=1"))
+datatable(
+  resids_result,
+  rownames = TRUE,
+  filter = "top",
+  options = list(pageLength = 5, scrollX = T),
+  caption = "Residuals of NNLS"
+)
 
-datatable(resids_result, rownames = TRUE, filter="top", options = list(pageLength = 5, scrollX=T), caption = "Residuals of NNLS")
-
-rownames(resids_result) <- resids_result[,1]
-#resids_result <- resids_result[,-1]
-
+rownames(resids_result) <- resids_result[, 1]
 
 rownames(resids_result) <- sub("-.*", "", rownames(resids_result))
-rownames(resids_result) <- sub("snake*", "", rownames(resids_result))
-#row.names(resids_result) <- resids_result[,1]
-#resids_result <- resids_result[,-1]
+rownames(resids_result) <-
+  sub("snake*", "", rownames(resids_result))
+tmp <-
+  rownames(resids_result)[(rownames(resids_result) %in% sample_annotation$SampleID)]
 
-tmp <- rownames(resids_result)[(rownames(resids_result) %in% sample_annotation$SampleID)]
-
-resids_result <- resids_result[tmp,]
+resids_result <- resids_result[tmp, ]
 resids_result$SampleID <- rownames(resids_result)
 resids_result$X1 <- NULL
 
-resids_result <- merge(resids_result, sample_annotation, by.x = "SampleID", by.y = "SampleID")
+resids_result <-
+  merge(resids_result,
+        sample_annotation,
+        by.x = "SampleID",
+        by.y = "SampleID")
 
-#print(wmwTest(resids_result$Residuals~resids_result$CorrectClassification))
+p <-
+  ggplot(resids_result, aes(sample = scale(Residuals))) + stat_qq() + stat_qq_line() + labs(title = "QQ-plot of residuals") + theme_point
 
-ggplot(resids_result, aes(x = reorder(CorrectClassification, desc(CorrectClassification)), y = Residuals, col = ClassificationDetail)) +
-  geom_beeswarm(color = "black", cex = 2, size = 2) + geom_beeswarm(cex = 2, size = 1.5) + theme_point + stat_compare_means(comparisons = list(c("Correct", "Incorrect")), tip.length = 0,bracket.size = 0.5) + 
-  labs(y = "Residuals", x = "Classfication", col = "Classification call", title = "Residuals of misclassified samples are lower")
-
-
-p <- ggplot(resids_result, aes(sample = scale(Residuals))) + stat_qq() + stat_qq_line() + labs(title = "QQ-plot of residuals")
-p
-p <- ggplot(resids_result, aes(x = scale(Residuals))) + geom_histogram(bins = 20) + labs(title = "Histogram of residuals")
 p
 
+p <-
+  ggplot(resids_result, aes(x = scale(Residuals))) + geom_histogram(bins = 20) + labs(title = "Histogram of residuals") + theme_point
+
+p
 ```
 
 # Reproducibility plot
-- The regions selected for comparison of RRBS data with Illumina HumanMethylation 450K array data are consistently covered in all samples. Eight regions of the total 14103 regions were not covered in any of the samples (total number of regions used = 14095). A read cut-off of 30 read per region was used for all downstream analyses.
+The regions that were selected for comparison of RRBS data with Illumina HumanMethylation 450K array data are consistently covered in all samples. Eight regions of the total 14103 regions were not covered in any of the samples (total number of regions used = 14095). A read cut-off of 30 read per region was used for all downstream analyses.
 
 ```{r, include = TRUE}
-reproducibility <- as.data.frame(read_csv("https://www.dropbox.com/s/0ernrimdmtquiu9/reproducibility_matrix.csv?dl=1", na = c("NA")))
+row.names(reproducibility) <- reproducibility[, 1]
+reproducibility <- reproducibility[, -1]
 
-row.names(reproducibility) <- reproducibility[,1]
-reproducibility <- reproducibility[,-1]
+reproducibility$`Read cutoff` <-
+  gsub("rco", "", reproducibility$`Read cutoff`)
 
-reproducibility$`Read cutoff` <- gsub("rco", "", reproducibility$`Read cutoff`)
+reproducibility$`Read cutoff.ordered` <-
+  factor(reproducibility$`Read cutoff`, levels = c("1", "30", "100"))
 
-reproducibility$`Read cutoff.ordered` <- factor(reproducibility$`Read cutoff`, levels=c("1", "30", "100"))
-
-ggplot(reproducibility, aes(y=bin, x=count, col = `Read cutoff.ordered`)) + geom_line() + labs( y = "% of samples (n = 60)", x = "% of regions recurrently covered (n = 14095)", col = "read cutoff") +   theme_point + scale_y_continuous(breaks=seq(0,100,20))  + scale_x_continuous(breaks=seq(0,100,20))
-
-```
-
-# Interobserver variability HMW ratio
-```{r, include = FALSE}
-cfDNA_HMW_CVP <- read_csv("https://www.dropbox.com/s/zhegm7ozdmipcvb/cfDNA_HMW_CVP.csv?dl=1")
-cfDNA_HMW_CVP$Contamination <- ifelse(cfDNA_HMW_CVP$ProSize < 1, "High", ifelse(cfDNA_HMW_CVP$ProSize < 5, "Medium", "Low" ))
-
-cfDNA_HMW_CVP <- cfDNA_HMW_CVP[!is.na(cfDNA_HMW_CVP$`CFD nummer`), ]
-cfDNA_HMW_CVP
-HMW_Kapa <- merge(sample_annotation, cfDNA_HMW_CVP , by.x = "SampleID", by.y = "CFD nummer")
-```
-
-```{r}
-ggplot(HMW_Kapa, aes(x = ProSize, y = cfDNA_HMW_ratio, label = SampleID)) +
-  geom_abline(slope=1, intercept=0, color = "gray", linetype = "dashed") + geom_point(color = "black", size = 2) + geom_point(size = 1.5) + theme_point + 
-  labs(x = "Observer 1 (CVP)", y = "Observer 2 (RVP)", col = "HMW contamination", shape = "HMW contamination", fill = "HMW contamination", title = "Interrater variability between observer 1 and \n observer 2 cfDNA-HMW ratio") + ylim(NA, 130) + xlim(NA, 130) + stat_cor(method = "pearson", aes(label=paste(..rr.label.., cut(..p..,breaks = c(-Inf, 0.0001, 0.001, 0.01, 0.05, Inf),labels = c("'****'", "'***'", "'**'", "'*'", "'ns'")),sep = "~")))
-
-kappa2(HMW_Kapa %>% select("Contamination", "cfDNA_HMW_ratio_binned"), weight = "equal")
-```
-
-
-# Copy number profiles {.tabset}
-## General
-See code on GitHub for more information about preprocessing.
-
-```{r}
-# R Code from Lennart Raman
-
-# -----
-# param
-# -----
-
-annot.file <- "https://www.dropbox.com/s/0py86f5sfi9kchh/sample.annot.txt?dl=1"
-plots.dir <- "/Users/rmvpaeme/test/plotterfolder/plots/"
-
-label1 <- 'cf-RRBS'
-label2 <- 'sWGS'
-
-options(scipen=999)
-options(digits=10)
-```
-
-## CNV profiles
-
-```{r, chache = TRUE}
-# -----
-# lib
-# -----
-suppressMessages(library("data.table"))
-suppressMessages(library("RColorBrewer"))
-
-color.A = colorRampPalette(brewer.pal(4,"BrBG"))(4)[4]
-color.B = colorRampPalette(brewer.pal(4,"BrBG"))(4)[2]
-color.C = colorRampPalette(brewer.pal(4,"BrBG"))(4)[1]
-
-# -----
-# overall fun
-# -----
-
-collapse <- function(ratio, chr.lst, collapse.factor=100, merge.factor = 1){
-  
-  current.n <- 1
-  ratio.collapsed <- rep(NA, length(ratio))
-  for (chr in unique(chr.lst)){
-    n <- length(which(chr.lst == chr))
-    for (i in (current.n:(current.n + n - 1))){
-      start = i - collapse.factor / 2
-      end = i + collapse.factor / 2
-      
-      if (start < current.n){
-        start = current.n
-      }
-      if (end > current.n + n - 1){
-        end = current.n + n - 1
-      }
-      
-      if (length(which(is.na(ratio[start:end]))) > collapse.factor / 2){ # more than 50% NA -> skip
-        ratio.collapsed[i] = NA
-      } else {
-        ratio.collapsed[i] = mean(ratio[start:end], na.rm = T)
-      }
-      i = i + 1
-    }
-    ratio.collapsed[current.n] <- NA # start with NA (split chromosomes)
-    current.n <- current.n + n
-  }
-  if (merge.factor > 1){
-    ratio.collapsed <- cbind(ratio.collapsed[seq(1,length(ratio.collapsed),merge.factor)],
-                             ratio.collapsed[seq(1,length(ratio.collapsed),merge.factor) + 1])
-    ratio.collapsed <- rowMeans(ratio.collapsed)
-  }
-  return(ratio.collapsed)
-}
-
-# -----
-# load
-# -----
-
-sample.annot <- read.csv(annot.file, sep = '\t', header = T, stringsAsFactors = F)
-
-profiles.bins <- list()
-profiles.segs <- list()
-
-for (sample in c(sample.annot$base1, sample.annot$base2)){
-  #print(basename(sample))
-  bin <- fread(paste0(sample, '_bins.bed'), sep = '\t', header = T)
-  bin <- bin[bin$chr %in% as.character(1:22)]
-  seg <- fread(paste0(sample, '_segments.bed'), sep = '\t', header = T)
-  seg <- seg[seg$chr %in% as.character(1:22)]
-  bin$ratio.seg <- NA
-  bin$zscore.seg <- NA
-  binsize <- bin$end[1] - bin$start[1] + 1
-  for (i in 1:nrow(seg)){
-    s <- which(bin$chr == seg$chr[i] & bin$start == seg$start[i])
-    e <- which(bin$chr == seg$chr[i] & bin$end == seg$end[i])
-    bin$ratio.seg[s:e] <- seg$ratio[i]
-    bin$zscore.seg[s:e] <- seg$zscore[i]
-  }
-  bin$ratio.col <- collapse(bin$ratio, bin$chr, collapse.factor = 10000000/binsize, merge.factor = 400000 / binsize)
-  profiles.bins[[sample]] <- bin
-  profiles.segs[[sample]] <- seg
-}
-
-# -----
-# main
-# -----
-
-# Profile concordance
-
-l.matrix <- matrix(rep(1, 8*3), 3, 8, byrow=T)
-l.matrix[2, ] <- 2
-l.matrix[3, ] <- 3
-l.matrix[3, 7:8] <- 4
-
-for (pt in sample.annot$out.id){
-  print(pt)
-  s1 <- sample.annot$base1[sample.annot$out.id == pt]
-  s2 <- sample.annot$base2[sample.annot$out.id == pt]
-  
-  #png(paste0(plots.dir, '/', pt, ".png"), width=8,height=4,units="in",res=1024)
-  par(mar=c(2,2,1,0), mgp=c(0,.4,.2), xpd=NA, oma=c(1,2,1,0))
-  
-  layout(l.matrix)
-  
-  b1 <- boxplot.stats(profiles.bins[[s1]]$ratio)
-  b2 <- boxplot.stats(profiles.bins[[s2]]$ratio)
-  ylim = c(min(b1$stats[c(1,5)], b2$stats[c(1,5)]), max(b1$stats[c(1,5)], b2$stats[c(1,5)])) * 2.5
-  
-  plot(profiles.bins[[s1]]$ratio, ylim = ylim, axes=F, ylab='', xlab='', pch=16, col=color.A, cex=.8)
-  par(new=T)
-  plot(profiles.bins[[s1]]$ratio.seg, ylim = ylim, axes=F, ylab='', xlab='', pch=16, col=rgb(0.9,0.9,0.9),cex=.2)
-  chr.lengths <- table(profiles.bins[[s1]]$chr)[match(unique(profiles.bins[[s1]]$chr), names(table(profiles.bins[[s1]]$chr)))]
-  chr.ends <- c(1, cumsum(chr.lengths))
-  chr.mids <- chr.ends[2:length(chr.ends)] - chr.lengths / 2
-  segments(chr.ends[length(chr.ends)] * -.02, 0, chr.ends[length(chr.ends)] * 1.02, 0, lty = 3, lwd = 1)
-  text(-nrow(profiles.bins[[s1]]) * (-0.05), ylim[2] * 1.4, paste0(pt, " - ", label1), col=color.A, cex=1.3, font=2)
-  axis(2, las=1, tcl=0.5)
-  mtext(expression('log'[2]*'(ratio)'),2,2, cex=.8)  
-  segments(chr.ends, ylim[1], chr.ends, ylim[2], lty = 3)
-  
-  plot(profiles.bins[[s2]]$ratio, ylim = ylim, axes=F, ylab='', xlab='', pch=16, col=color.B, cex=.8)
-  par(new=T)
-  plot(profiles.bins[[s2]]$ratio.seg, ylim = ylim, axes=F, ylab='', xlab='', pch=16, col=rgb(0.9,0.9,0.9),cex=.2)
-  chr.lengths <- table(profiles.bins[[s2]]$chr)[match(unique(profiles.bins[[s2]]$chr), names(table(profiles.bins[[s2]]$chr)))]
-  chr.ends <- c(1, cumsum(chr.lengths))
-  chr.mids <- chr.ends[2:length(chr.ends)] - chr.lengths / 2
-  segments(chr.ends[length(chr.ends)] * -.02, 0, chr.ends[length(chr.ends)] * 1.02, 0, lty = 3, lwd = 1)
-  text(-nrow(profiles.bins[[s2]]) * (-0.05), ylim[2] * 1.4, paste0(pt, " - ", label2," "), col=color.B, cex=1.3, font=2)
-  axis(2, las=1, tcl=0.5)
-  mtext(expression('log'[2]*'(ratio)'),2,2, cex=.8)
-  segments(chr.ends, ylim[1], chr.ends, ylim[2], lty = 3)
-  
-  text(chr.mids, ylim[1] - sum(abs(ylim)) * .25, labels=paste0('chr', unique(profiles.bins[[s1]]$chr)), srt=45, cex = .8)
-  
-  chr.lengths <- table(profiles.bins[[s1]]$chr)[match(unique(profiles.bins[[s1]]$chr), names(table(profiles.bins[[s1]]$chr)))]
-  chr.ends <- c(1, cumsum(chr.lengths))
-  chr.mids <- chr.ends[2:length(chr.ends)] - chr.lengths / 2
-  s2.ratio.col <- profiles.bins[[s2]]$ratio.col[1:nrow(profiles.bins[[s1]])]
-  plot(profiles.bins[[s1]]$ratio.col, ylim = ylim, axes=F, ylab='', xlab='', pch=16, type = 'l', col=color.A, lwd = 2)
-  par(new=T)
-  plot(s2.ratio.col, ylim = ylim, axes=F, ylab='', xlab='', pch=16, type = 'l', col=color.B, lwd = 2)
-  segments(chr.ends[length(chr.ends)] * -.02, 0, chr.ends[length(chr.ends)] * 1.02, 0, lty = 3, lwd = 1)
-  axis(2, las=1, tcl=0.5)
-  mtext(expression('log'[2]*'(ratio)'),2,2, cex=.8)  
-  segments(chr.ends, ylim[1], chr.ends, ylim[2], lty = 3)
-  text(chr.mids, ylim[1] - sum(abs(ylim)) * .15, labels=unique(profiles.bins[[s2]]$chr), srt=45, cex = .7)
-  mtext(expression('Chromosomes'), 1, 1.7, cex=.8)
-  
-  par(mar=c(2,2+1,1,0+2), xpd=F)
-  
-  ylim <- ylim * .5
-  
-  trend.1 <- profiles.bins[[s1]]$ratio.col
-  trend.2 <- s2.ratio.col
-  
-  plot(trend.1, trend.2, axes=F, ylab='', xlab='', ylim=ylim, xlim=ylim, pch=16, cex=.5)
-  
-  axis(2, las=1, tcl=0.5)
-  axis(1, las=1, tcl=0.5)
-  
-  mtext(expression('log'[2]*'(ratio)'), 1, 2, col = color.A, cex=.8)
-  mtext(expression('log'[2]*'(ratio)'), 2, 2, col = color.B, cex=.8)  
-  
-  mask <- !(is.na(trend.1) | is.na(trend.2))
-  
-  p = cor(trend.1[mask], trend.2[mask])
-  c = coef(lm(trend.2[mask] ~ trend.1[mask]))
-  int = c[1] ; beta = c[2]
-  segments(ylim[1], int + ylim[1] * beta, ylim[2], int + ylim[2] * beta, lty=3, lwd=1.5,
-           col=color.C)
-  
-  v <- prcomp(cbind(trend.1[mask], trend.2[mask]))$rotation # x, y
-  beta <- v[2,1]/v[1,1]
-  int <- mean(trend.2[mask]) - mean(trend.1[mask]) * beta # y - x.b
-  
-  segments(ylim[1], int + ylim[1] * beta, ylim[2], int + ylim[2] * beta, lty=1, lwd=1.5,
-           col=color.C)
-  
-  legend('topleft', paste0('r=', round(p, 2)), bty='n', text.col = color.C)
-  
-  #dev.off()
-}
-
+ggplot(reproducibility,
+       aes(y = bin, x = count, col = `Read cutoff.ordered`)) + geom_line() + labs(y = "% of samples (n = 60)", x = "% of regions recurrently covered (n = 14095)", col = "read cutoff") +   theme_point + scale_y_continuous(breaks =
+                                                                                                                                                                                                                               seq(0, 100, 20))  + scale_x_continuous(breaks = seq(0, 100, 20))
 ```
 
 # Grid plots
-```{r, include = FALSE}
-class_results <- ggplot(sample_annotation, aes(x = CorrectClassification, y = Estimated_TFx*100, col = ClassificationDetail)) +
-  geom_beeswarm(color = "black", cex = 3.5, size = 2) + geom_beeswarm(cex = 3.5, size = 1.5) + theme_point + stat_compare_means(label = "p.signif", comparisons = list(c("Correct", "Incorrect")), tip.length = 0,bracket.size = 0.5) + 
+```{r, warning=FALSE, results='hide',message=FALSE}
+class_results <-
+  ggplot(
+    sample_annotation,
+    aes(x = CorrectClassification, y = Estimated_TFx * 100, col = ClassificationDetail)
+  ) +
+  geom_beeswarm(color = "black", cex = 3.5, size = 2) + geom_beeswarm(cex = 3.5, size = 1.5) + theme_point + stat_compare_means(
+    label = "p.signif",
+    comparisons = list(c("Correct", "Incorrect")),
+    tip.length = 0,
+    bracket.size = 0.5
+  ) +
   labs(y = "Estimated TFx (%)", x = "Classfication", col = "Classification call")
-```
 
-```{r, include = FALSE}
-dz_extent <- ggplot(sample_annotation, aes(x = reorder(disease_extent, desc(disease_extent)), y = Estimated_TFx*100, col = ClassificationDetail)) +
-  geom_beeswarm(color = "black", cex = 3.5, size = 2) + geom_beeswarm(cex = 3.5, size = 1.5) + theme_point + stat_compare_means(label = "p.format", comparisons = list(c(1,2)), tip.length = 0, bracket.size = 0.5) + labs(y = "Estimated TFx (%)", x = "Disease extent", col = "Classification call")
-```
+dz_extent <-
+  ggplot(sample_annotation,
+         aes(
+           x = reorder(disease_extent, desc(disease_extent)),
+           y = Estimated_TFx * 100,
+           col = ClassificationDetail
+         )) +
+  geom_beeswarm(color = "black", cex = 3.5, size = 2) + geom_beeswarm(cex = 3.5, size = 1.5) + theme_point + stat_compare_means(
+    label = "p.format",
+    comparisons = list(c(1, 2)),
+    tip.length = 0,
+    bracket.size = 0.5
+  ) + labs(y = "Estimated TFx (%)", x = "Disease extent", col = "Classification call")
 
+ratio_cont <-
+  ggplot(
+    sample_annotation,
+    aes(
+      y = Estimated_TFx * 100,
+      x = cfDNA_HMW_ratio,
+      col = ClassificationDetail,
+      shape = reorder(Biomaterial, desc(Biomaterial))
+    )
+  ) + scale_x_continuous(trans = 'log10') +
+  geom_point(color = "black",  size = 2) + geom_point(size = 1.5) + theme_point +
+  labs(y = "Estimated TFx (%)",
+       x = "cfDNA-HMW ratio (log)",
+       col = "Classification call",
+       shape = "Biomaterial") + geom_vline(xintercept = 1,
+                                           colour = "grey",
+                                           linetype = "dashed") + geom_vline(xintercept = 5,
+                                                                             colour = "grey",
+                                                                             linetype = "dashed") +
+  annotate(
+    "text",
+    x = 1,
+    y = 90,
+    size = 3.5,
+    label = "High HMW\n",
+    colour = "gray",
+    angle = -270
+  ) +
+  annotate(
+    "text",
+    x = 1,
+    y = 90,
+    size = 3.5,
+    label = "\nMedium HMW",
+    colour = "gray",
+    angle = 90
+  ) +
+  annotate(
+    "text",
+    x = 5,
+    y = 90,
+    size = 3.5,
+    label = "Medium HMW\n",
+    colour = "gray",
+    angle = -270
+  ) +
+  annotate(
+    "text",
+    x = 5,
+    y = 90,
+    size = 3.5,
+    label = "\nLow HMW",
+    colour = "gray",
+    angle = 90
+  )
 
-```{r, include = FALSE}
-ratio_cont <- ggplot(sample_annotation, aes(y = Estimated_TFx*100, x = cfDNA_HMW_ratio, col = ClassificationDetail, shape = reorder(Biomaterial, desc(Biomaterial)))) + scale_x_continuous(trans = 'log10') +
-  geom_point(color = "black",  size = 2) + geom_point(size = 1.5) + theme_point + 
-  labs(y = "Estimated TFx (%)", x = "cfDNA-HMW ratio (log)",col = "Classification call", shape = "Biomaterial") + geom_vline(xintercept=1, colour="grey", linetype = "dashed") +geom_vline(xintercept=5, colour="grey", linetype = "dashed")+
-  annotate("text", x = 1, y = 90, size = 3.5,label="High HMW\n", colour="gray", angle=-270) +
-  annotate("text", x = 1, y = 90, size = 3.5,label = "\nMedium HMW", colour="gray", angle=90) +  
-  annotate("text", x = 5, y = 90, size = 3.5,label="Medium HMW\n", colour="gray", angle=-270) +
-  annotate("text", x = 5, y = 90, size = 3.5,label="\nLow HMW", colour="gray", angle=90)
-```
-
-```{r, include = FALSE}
-ratio_binned <- ggplot(sample_annotation, aes(y = Estimated_TFx*100, x = cfDNA_HMW_ratio_binned, col = ClassificationDetail, shape = reorder(Biomaterial, desc(Biomaterial)))) +
-  geom_beeswarm(color = "black", cex = 3.5, size = 2) + geom_beeswarm(cex = 3.5, size = 1.5) + theme_point + 
-  labs(y = "Estimated TFx (%)", x = "HMW contamination",col = "Classification call", shape = "Biomaterial")
-```
-
-```{r, include = FALSE}
-corrCNA <- ggplot(sample_annotation, aes(y = Estimated_TFx*100, x = IchorCNA_TFx*100, col = cfDNA_HMW_ratio_binned, fill = cfDNA_HMW_ratio_binned)) +
-  geom_smooth(method="lm", se = TRUE, fullrange = FALSE)+ geom_point(color = "black", size = 2) + geom_point(size = 1.5) + theme_point +
-  geom_abline(slope=1, intercept=0, color = "gray", linetype = "dashed") +
-  labs(x = "CNV-based eTFx (%)", y = "Methylation-based eTFx (%)", col = "HMW contamination", shape = "HMW contamination", fill = "HMW contamination") + ylim(NA, 100) + xlim(NA, 100) + stat_cor(method = "spearman", aes(label=paste(..r.label.., ifelse(..p.value..< 0.001, "'p < 0.001**'", 
-                                                ifelse(..p.value..>=0.001 & ..p.value..<0.05, "'p < 0.05*'", paste("'p='",round(..p.value..,2), sep = "~"))),sep = "~")), show.legend =  FALSE)+ scale_color_brewer(palette="Greens") + scale_fill_brewer(palette="Greens") 
-
-```
-
-
-```{r, include = FALSE}
-CNA_R <- ggplot(sample_annotation, aes(x = cfRRBS_sWGS_CNA, y = CNV_pearson, col = cfDNA_HMW_ratio_binned))  +
+ratio_binned <-
+  ggplot(
+    sample_annotation,
+    aes(
+      y = Estimated_TFx * 100,
+      x = cfDNA_HMW_ratio_binned,
+      col = ClassificationDetail,
+      shape = reorder(Biomaterial, desc(Biomaterial))
+    )
+  ) +
   geom_beeswarm(color = "black", cex = 3.5, size = 2) + geom_beeswarm(cex = 3.5, size = 1.5) + theme_point +
-  labs(x = "cfRRBS - sWGS copy number aberrations", y = "Pearson R", size = "DNA input (ng)", shape = "HMW  contamination", fill = "HMW contamination") + scale_color_brewer(palette="Greens")
+  labs(y = "Estimated TFx (%)",
+       x = "HMW contamination",
+       col = "Classification call",
+       shape = "Biomaterial")
+
+corrCNA <-
+  ggplot(
+    sample_annotation,
+    aes(
+      y = Estimated_TFx * 100,
+      x = IchorCNA_TFx * 100,
+      col = cfDNA_HMW_ratio_binned,
+      fill = cfDNA_HMW_ratio_binned
+    )
+  ) +
+  geom_smooth(method = "lm",
+              se = TRUE,
+              fullrange = FALSE) + geom_point(color = "black", size = 2) + geom_point(size = 1.5) + theme_point +
+  geom_abline(
+    slope = 1,
+    intercept = 0,
+    color = "gray",
+    linetype = "dashed"
+  ) +
+  labs(
+    x = "CNV-based eTFx (%)",
+    y = "Methylation-based eTFx (%)",
+    col = "HMW contamination",
+    shape = "HMW contamination",
+    fill = "HMW contamination"
+  ) + ylim(NA, 100) + xlim(NA, 100) + stat_cor(method = "spearman", show.legend =  FALSE) + scale_color_brewer(palette = "Greens") + scale_fill_brewer(palette =
+                                                                                                                                                                   "Greens")
+
+CNA_R <-
+  ggplot(
+    sample_annotation,
+    aes(x = cfRRBS_sWGS_CNA, y = CNV_pearson, col = cfDNA_HMW_ratio_binned)
+  )  +
+  geom_beeswarm(color = "black", cex = 3.5, size = 2) + geom_beeswarm(cex = 3.5, size = 1.5) + theme_point +
+  labs(
+    x = "cfRRBS - sWGS copy number aberrations",
+    y = "Pearson R",
+    size = "DNA input (ng)",
+    shape = "HMW  contamination",
+    fill = "HMW contamination"
+  ) + scale_color_brewer(palette = "Greens")
 ```
 
 
-```{r, fig.height=3.5, fig.width=8}
-grid_arrange_shared_legend(class_results,dz_extent, position = "right")
+```{r, warning=FALSE, results='hide',message=FALSE, fig.height=3.5, fig.width=8}
+grid1 <- grid_arrange_shared_legend(class_results,dz_extent, position = "right")
+grid1
+ggsave(file="grid1.svg", plot=grid1, width=8, height=3.5)
+ggsave(file="grid1.png", plot=grid1, width=8, height=3.5)
 
-grid_arrange_shared_legend(ratio_cont ,ratio_binned, position = "right")
+grid2 <- grid_arrange_shared_legend(ratio_cont ,ratio_binned, position = "right")
+grid2
+ggsave(file="grid2.svg", plot=grid2, width=8, height=3.5)
+ggsave(file="grid2.png", plot=grid2, width=8, height=3.5)
 
-grid_arrange_shared_legend(corrCNA ,CNA_R, position = "right")
+grid3 <- grid_arrange_shared_legend(corrCNA ,CNA_R, position = "right")
+grid3
+ggsave(file="grid3.svg", plot=grid3, width=8, height=3.5)
+ggsave(file="grid3.png", plot=grid3, width=8, height=3.5)
 ```
 
 
