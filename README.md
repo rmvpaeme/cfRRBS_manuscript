@@ -46,6 +46,9 @@ CpGs were clustered in order to use more mappable reads. We adjusted the target 
 The script requires the Infinium HM450K manifest file, HumanMethylation450_15017482_v1-2.csv, and be download from [the Illumina website](http://emea.support.illumina.com/downloads/humanmethylation450_15017482_v1-2_product_files.html).
 
 ## Make reference set with MakeTrainTest.py
+
+**The following below is deprecated, see https://github.com/rmvpaeme/cfRRBS_classifier for more info how to perform the deconvolution**
+
 `MakeTrainTest.py` builds the input files for `runMeth_atlas.py` (both the reference set and the samples that need to be classified). It takes the argument `--train` for rebuilding the reference set and `--viz` for tSNE and UMAP plots (`--viz` only works if `--train` is enabled). Normally, the reference set should only be built once (but every time a sample or tumor entity is added, it needs to be updated). 
 
 The output files (in the example train and test_methy and test_depth) have the same structure as described in the [CancerLocator repository](https://github.com/jasminezhoulab/CancerLocator).
