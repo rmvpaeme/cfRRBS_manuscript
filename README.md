@@ -1,5 +1,7 @@
 # Scripts used in Van Paemel et al. (2019)
 
+Markdown at [link](./Markdowns/Analysis_paper_public.html).
+
 ## Introduction
 These are the scripts that were used in the manuscript "Low-cost, non-invasive classification of pediatric solid tumors using reduced representation bisulfite sequencing of cell-free DNA: a proof-of-principle study" on [biorxiv](https://www.biorxiv.org/content/10.1101/795047v1). See also materials and method section of the manuscript for more information.
 
