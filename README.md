@@ -1,5 +1,7 @@
 # Scripts used in Van Paemel et al. (2019)
 
+See https://rmvpaeme.github.io/cfRRBS_manuscript/
+
 Markdown at [link](./Markdowns/Analysis_paper_public.html).
 
 ## Introduction
